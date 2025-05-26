@@ -5,10 +5,7 @@
 // @description  Auto-fill your Workday job applications
 // @author       Athrey Gonella
 // @match        https://*.myworkdayjobs.com/*
-// @grant        GM_setValue
-// @grant        GM_getValue
 // @grant        GM_log
-// @grant        GM_xmlhttpRequest
 // @updateURL    https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/QuickApply/main/scripts/quickapply.user.js
 // @downloadURL  https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/QuickApply/main/scripts/quickapply.user.js
 // ==/UserScript==
@@ -16,31 +13,36 @@
 (function() {
     'use strict';
 
-    // Load profile data from local storage or fetch from file
-    let RESPONSES = GM_getValue('profile_data', null);
+    // Load profile data from local storage
+    let RESPONSES = JSON.parse(localStorage.getItem('quickapply_profile'));
 
-    // Function to load profile data
-    function loadProfileData() {
-        GM_xmlhttpRequest({
-            method: 'GET',
-            url: 'file://' + GM_getValue('profile_path', ''),
-            onload: function(response) {
-                if (response.status === 200) {
-                    try {
-                        RESPONSES = JSON.parse(response.responseText);
-                        GM_setValue('profile_data', RESPONSES);
-                        GM_log('Profile data loaded successfully');
-                    } catch (e) {
-                        GM_log('Error parsing profile data:', e);
-                    }
-                } else {
-                    GM_log('Error loading profile data:', response.status);
+    // Function to load profile from file and update localStorage
+    function loadProfileFromFile() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        
+        fileInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const profileData = JSON.parse(e.target.result);
+                    localStorage.setItem('quickapply_profile', JSON.stringify(profileData));
+                    RESPONSES = profileData;
+                    console.log('Profile loaded successfully from file');
+                    alert('Profile loaded successfully! You can now use QuickApply.');
+                } catch (error) {
+                    console.error('Error parsing profile:', error);
+                    alert('Error loading profile. Please check if the file is valid JSON.');
                 }
-            },
-            onerror: function(error) {
-                GM_log('Error loading profile data:', error);
-            }
-        });
+            };
+            reader.readAsText(file);
+        };
+
+        fileInput.click();
     }
 
     // Helper function to find and fill input fields
@@ -58,7 +60,7 @@
                     input.value = value;
                     input.dispatchEvent(new Event('input', { bubbles: true }));
                     input.dispatchEvent(new Event('change', { bubbles: true }));
-                    GM_log(`Filled ${labelText} with ${value}`);
+                    console.log(`Filled ${labelText} with ${value}`);
                     return true;
                 }
             }
@@ -82,7 +84,7 @@
                         if (option.text.toLowerCase().includes(value.toLowerCase())) {
                             select.value = option.value;
                             select.dispatchEvent(new Event('change', { bubbles: true }));
-                            GM_log(`Selected ${value} for ${labelText}`);
+                            console.log(`Selected ${value} for ${labelText}`);
                             return true;
                         }
                     }
@@ -105,7 +107,7 @@
                         radio.parentElement.textContent.toLowerCase().includes(value.toLowerCase())) {
                         radio.checked = true;
                         radio.dispatchEvent(new Event('change', { bubbles: true }));
-                        GM_log(`Selected radio option ${value} for ${labelText}`);
+                        console.log(`Selected radio option ${value} for ${labelText}`);
                         return true;
                     }
                 }
@@ -117,7 +119,7 @@
     // Main function to fill the form
     function fillForm() {
         if (!RESPONSES) {
-            alert('Please set up your profile.json path in the Tampermonkey dashboard settings.');
+            alert('Please load your profile.json file first using the "Load Profile" button');
             return;
         }
 
@@ -154,8 +156,8 @@
         fillInputField('strengths', RESPONSES.strengthsWeaknesses);
     }
 
-    // Add a button to trigger the autofill
-    function addAutofillButton() {
+    // Add buttons to trigger the autofill and profile loading
+    function addButtons() {
         // Create container for centering
         const container = document.createElement('div');
         container.style.position = 'fixed';
@@ -164,42 +166,64 @@
         container.style.right = '0';
         container.style.display = 'flex';
         container.style.justifyContent = 'center';
+        container.style.gap = '10px';
         container.style.zIndex = '9999';
 
-        // Create the button
-        const button = document.createElement('button');
-        button.textContent = 'QuickApply';
-        button.style.padding = '10px 20px';
-        button.style.backgroundColor = '#4CAF50';
-        button.style.color = 'white';
-        button.style.border = 'none';
-        button.style.borderRadius = '5px';
-        button.style.cursor = 'pointer';
-        button.style.fontSize = '14px';
-        button.style.fontWeight = 'bold';
-        button.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        // Create the QuickApply button
+        const applyButton = document.createElement('button');
+        applyButton.textContent = 'QuickApply';
+        applyButton.style.padding = '10px 20px';
+        applyButton.style.backgroundColor = '#4CAF50';
+        applyButton.style.color = 'white';
+        applyButton.style.border = 'none';
+        applyButton.style.borderRadius = '5px';
+        applyButton.style.cursor = 'pointer';
+        applyButton.style.fontSize = '14px';
+        applyButton.style.fontWeight = 'bold';
+        applyButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
         
         // Add hover effect
-        button.addEventListener('mouseover', () => {
-            button.style.backgroundColor = '#45a049';
+        applyButton.addEventListener('mouseover', () => {
+            applyButton.style.backgroundColor = '#45a049';
         });
-        button.addEventListener('mouseout', () => {
-            button.style.backgroundColor = '#4CAF50';
+        applyButton.addEventListener('mouseout', () => {
+            applyButton.style.backgroundColor = '#4CAF50';
         });
         
-        button.addEventListener('click', fillForm);
+        applyButton.addEventListener('click', fillForm);
+
+        // Create the Load Profile button
+        const loadButton = document.createElement('button');
+        loadButton.textContent = 'Load Profile';
+        loadButton.style.padding = '10px 20px';
+        loadButton.style.backgroundColor = '#2196F3';
+        loadButton.style.color = 'white';
+        loadButton.style.border = 'none';
+        loadButton.style.borderRadius = '5px';
+        loadButton.style.cursor = 'pointer';
+        loadButton.style.fontSize = '14px';
+        loadButton.style.fontWeight = 'bold';
+        loadButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
         
-        container.appendChild(button);
+        // Add hover effect
+        loadButton.addEventListener('mouseover', () => {
+            loadButton.style.backgroundColor = '#1976D2';
+        });
+        loadButton.addEventListener('mouseout', () => {
+            loadButton.style.backgroundColor = '#2196F3';
+        });
+        
+        loadButton.addEventListener('click', loadProfileFromFile);
+        
+        // Add buttons to container and container to page
+        container.appendChild(loadButton);
+        container.appendChild(applyButton);
         document.body.appendChild(container);
     }
 
     // Initialize
     window.addEventListener('load', function() {
-        // Try to load profile data if not already loaded
-        if (!RESPONSES) {
-            loadProfileData();
-        }
-        addAutofillButton();
-        GM_log('Workday Autofill script loaded successfully');
+        addButtons();
+        console.log('QuickApply script loaded successfully');
     });
 })(); 

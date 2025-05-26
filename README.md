@@ -1,6 +1,6 @@
-# Workday Application Autofill Script
+# QuickApply for Workday
 
-This Tampermonkey script helps automate the process of filling out job applications on Workday websites. It automatically fills in common fields and provides preset responses to frequently asked questions.
+Automatically fill out Workday job applications.
 
 ## Setup Instructions
 
@@ -8,9 +8,15 @@ This Tampermonkey script helps automate the process of filling out job applicati
    - [Chrome Web Store](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
    - [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)
 
-2. Create your profile:
-   - Create a `profile.json` file in the root directory `QuickApply`
-   - Fill it with your personal information using this structure:
+2. Install the script:
+   - Click on the Tampermonkey extension icon
+   - Select "Create a new script"
+   - Copy and paste the contents of `scripts/quickapply.user.js` into the editor
+   - Save the script (Ctrl+S or File > Save)
+
+3. Create your profile:
+   - Create a file named `profile.json` in the root directory `QuickApply`
+   - Fill it with your information using this structure:
    ```json
    {
        "firstName": "Your First Name",
@@ -39,55 +45,40 @@ This Tampermonkey script helps automate the process of filling out job applicati
    ```
    - Note: This file is in `.gitignore` to keep your personal information private
 
-3. Install the script:
-   - Click on the Tampermonkey extension icon
-   - Select "Create a new script"
-   - Copy and paste the contents of `scripts/workday-autofill.js` into the editor
-   - Save the script (Ctrl+S or File > Save)
-
-4. Configure the profile path:
-   - Go to the Tampermonkey dashboard
-   - Click on the Workday Autofill script
-   - Go to Settings
-   - Click on the Storage tab
-   - Add a new value:
-     - Name: `profile_path`
-     - Value: The full path to your `profile.json` file (e.g., `/Users/username/workplace/QuickApply/data/profile.json`)
-
 ## Usage
 
 1. Navigate to any Workday job application page
-2. Look for the green "Autofill Form" button in the top-right corner of the page
-3. Click the button to automatically fill out the form
-4. Review all answers before submitting the application
+2. Click the blue "Load Profile" button at the top center of the page
+3. Select your `profile.json` file when prompted
+4. Once your profile is loaded, click the green "QuickApply" button to fill out the form
+5. Review all answers before submitting the application
 
 ## Features
 
-- Automatically fills in personal information from your profile.json
+- Load your profile from a JSON file
+- Store profile data in browser's localStorage
 - Handles different types of form fields:
   - Text inputs
   - Dropdowns
   - Radio buttons
-- Customizable responses for common questions
-- Visual feedback with a convenient autofill button
+- Visual feedback with convenient buttons
 - Console logging for debugging
-- Secure storage of personal information
+
+## Updating Your Profile
+
+To update your information:
+1. Edit your `profile.json` file with the new information
+2. On any Workday application page, click "Load Profile" and select the updated file
+3. Your new information will be saved and used for future applications
 
 ## Privacy and Security
 
-- Your personal information is stored in `profile.json` which is:
-  - Kept locally on your machine
-  - Listed in `.gitignore` to prevent accidental commits
-  - Never transmitted to external servers
-  - Only loaded when you're on a Workday application page
-
-## Customization
-
-You can customize the script by:
-1. Modifying your responses in `profile.json`
-2. Adding new field mappings in the script
-3. Adjusting the autofill button appearance
-4. Adding more custom responses for frequently encountered questions
+Your profile data is:
+- Stored in a local JSON file you control
+- Loaded into your browser's localStorage when needed
+- Only accessible on Workday job application pages
+- Never transmitted to external servers
+- Persists in localStorage until you clear your browser data or load a new profile
 
 ## Contributing
 
