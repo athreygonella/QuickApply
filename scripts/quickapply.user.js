@@ -5,18 +5,15 @@
 // @description  Auto-fill your Workday job applications
 // @author       Athrey Gonella
 // @match        https://*.myworkdayjobs.com/*
-// @grant        GM_log
-// @updateURL    https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/QuickApply/main/scripts/quickapply.user.js
-// @downloadURL  https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/QuickApply/main/scripts/quickapply.user.js
+// @updateURL    https://raw.githubusercontent.com/athreygonella/QuickApply/main/scripts/quickapply.user.js
+// @downloadURL  https://raw.githubusercontent.com/athreygonella/QuickApply/main/scripts/quickapply.user.js
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Load profile data from local storage
-    let RESPONSES = JSON.parse(localStorage.getItem('quickapply_profile'));
+    let PROFILE = JSON.parse(localStorage.getItem('quickapply_profile'));
 
-    // Function to load profile from file and update localStorage
     function loadProfileFromFile() {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -31,11 +28,9 @@
                 try {
                     const profileData = JSON.parse(e.target.result);
                     localStorage.setItem('quickapply_profile', JSON.stringify(profileData));
-                    RESPONSES = profileData;
-                    console.log('Profile loaded successfully from file');
+                    PROFILE = profileData;
                     alert('Profile loaded successfully! You can now use QuickApply.');
                 } catch (error) {
-                    console.error('Error parsing profile:', error);
                     alert('Error loading profile. Please check if the file is valid JSON.');
                 }
             };
@@ -45,22 +40,41 @@
         fileInput.click();
     }
 
-    // Helper function to find and fill input fields
-    function fillInputField(labelText, value) {
+    function fillTextfield(id, value) {
         if (!value) return false;
         
-        const labels = Array.from(document.querySelectorAll('label, span, div'));
-        for (const label of labels) {
-            if (label.textContent.toLowerCase().includes(labelText.toLowerCase())) {
-                const input = label.querySelector('input') || 
-                            label.parentElement.querySelector('input') ||
-                            label.parentElement.parentElement.querySelector('input');
-                
-                if (input) {
-                    input.value = value;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                    console.log(`Filled ${labelText} with ${value}`);
+        const input = document.getElementById(id);
+        if (input) {
+            input.value = value;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        }
+        return false;
+    }
+    
+    function fillButtonDropdown(id, value) {
+        if (!value) return false;
+        
+        const button = document.getElementById(id);
+        if (button) {
+            button.textContent = value;
+            button.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        }
+        return false;
+    }
+
+    // Helper function to handle dropdowns by ID
+    function fillDropdownById(id, value) {
+        if (!value) return false;
+
+        const select = document.getElementById(id);
+        if (select) {
+            for (const option of select.options) {
+                if (option.text.toLowerCase().includes(value.toLowerCase())) {
+                    select.value = option.value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
                     return true;
                 }
             }
@@ -68,49 +82,17 @@
         return false;
     }
 
-    // Helper function to handle dropdowns
-    function fillDropdown(labelText, value) {
+    // Function to fill radio buttons by name
+    function fillRadioByName(name, value) {
         if (!value) return false;
 
-        const labels = Array.from(document.querySelectorAll('label, span, div'));
-        for (const label of labels) {
-            if (label.textContent.toLowerCase().includes(labelText.toLowerCase())) {
-                const select = label.querySelector('select') || 
-                             label.parentElement.querySelector('select') ||
-                             label.parentElement.parentElement.querySelector('select');
-                
-                if (select) {
-                    for (const option of select.options) {
-                        if (option.text.toLowerCase().includes(value.toLowerCase())) {
-                            select.value = option.value;
-                            select.dispatchEvent(new Event('change', { bubbles: true }));
-                            console.log(`Selected ${value} for ${labelText}`);
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    // Function to fill radio buttons
-    function fillRadioButton(labelText, value) {
-        if (!value) return false;
-
-        const labels = Array.from(document.querySelectorAll('label, span, div'));
-        for (const label of labels) {
-            if (label.textContent.toLowerCase().includes(labelText.toLowerCase())) {
-                const radioButtons = label.parentElement.querySelectorAll('input[type="radio"]');
-                for (const radio of radioButtons) {
-                    if (radio.value.toLowerCase() === value.toLowerCase() ||
-                        radio.parentElement.textContent.toLowerCase().includes(value.toLowerCase())) {
-                        radio.checked = true;
-                        radio.dispatchEvent(new Event('change', { bubbles: true }));
-                        console.log(`Selected radio option ${value} for ${labelText}`);
-                        return true;
-                    }
-                }
+        const radioButtons = document.getElementsByName(name);
+        for (const radio of radioButtons) {
+            if (radio.value.toLowerCase() === value.toLowerCase() ||
+                radio.parentElement.textContent.toLowerCase().includes(value.toLowerCase())) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+                return true;
             }
         }
         return false;
@@ -118,47 +100,42 @@
 
     // Main function to fill the form
     function fillForm() {
-        if (!RESPONSES) {
+        if (!PROFILE) {
             alert('Please load your profile.json file first using the "Load Profile" button');
             return;
         }
 
         // Personal Information
-        fillInputField('first name', RESPONSES.firstName);
-        fillInputField('last name', RESPONSES.lastName);
-        fillInputField('email', RESPONSES.email);
-        fillInputField('phone', RESPONSES.phone);
-        fillInputField('address', RESPONSES.address);
-        fillInputField('city', RESPONSES.city);
-        fillInputField('state', RESPONSES.state);
-        fillInputField('zip', RESPONSES.zipCode);
+        fillTextfield('name--legalName--firstName', PROFILE.personalInfo.firstName);
+        fillTextfield('name--legalName--lastName', PROFILE.personalInfo.lastName);
+        
+        fillTextfield('address--addressLine1', PROFILE.personalInfo.address);
+        fillTextfield('address--city', PROFILE.personalInfo.city);
+        fillButtonDropdown('address--countryRegion', PROFILE.personalInfo.state);
+        fillTextfield('address--postalCode', PROFILE.personalInfo.zipCode);
+        
+        fillTextfield('phoneNumber--phoneNumber', PROFILE.personalInfo.phone);
 
         // Work Experience
-        fillInputField('years of experience', RESPONSES.yearsOfExperience);
-        fillInputField('current company', RESPONSES.currentCompany);
-        fillInputField('current role', RESPONSES.currentRole);
+        fillTextfield('experience--years', PROFILE.yearsOfExperience);
+        fillTextfield('currentCompany', PROFILE.currentCompany);
+        fillTextfield('currentRole', PROFILE.currentRole);
 
         // Education
-        fillDropdown('highest degree', RESPONSES.highestDegree);
-        fillInputField('field of study', RESPONSES.fieldOfStudy);
-        fillInputField('university', RESPONSES.university);
-        fillInputField('graduation year', RESPONSES.graduationYear);
+        fillDropdownById('education--degree', PROFILE.highestDegree);
+        fillTextfield('education--major', PROFILE.fieldOfStudy);
+        fillTextfield('education--school', PROFILE.university);
+        fillTextfield('education--graduationYear', PROFILE.graduationYear);
 
         // Common Questions
-        fillRadioButton('willing to relocate', RESPONSES.willingToRelocate);
-        fillRadioButton('require visa', RESPONSES.requireVisa);
-        fillRadioButton('legally authorized', RESPONSES.legallyAuthorized);
-        fillRadioButton('remote work', RESPONSES.remoteWork);
-
-        // Custom Questions
-        fillInputField('diversity', RESPONSES.diversityCommitment);
-        fillInputField('why interested', RESPONSES.whyInterested);
-        fillInputField('strengths', RESPONSES.strengthsWeaknesses);
+        fillRadioByName('willing-to-relocate', PROFILE.willingToRelocate);
+        fillRadioByName('require-visa', PROFILE.requireVisa);
+        fillRadioByName('legally-authorized', PROFILE.legallyAuthorized);
+        fillRadioByName('remote-work', PROFILE.remoteWork);
     }
 
-    // Add buttons to trigger the autofill and profile loading
-    function addButtons() {
-        // Create container for centering
+    window.addEventListener('load', function() {
+        // Container for centering
         const container = document.createElement('div');
         container.style.position = 'fixed';
         container.style.top = '10px';
@@ -169,7 +146,7 @@
         container.style.gap = '10px';
         container.style.zIndex = '9999';
 
-        // Create the QuickApply button
+        // QuickApply button
         const applyButton = document.createElement('button');
         applyButton.textContent = 'QuickApply';
         applyButton.style.padding = '10px 20px';
@@ -182,7 +159,6 @@
         applyButton.style.fontWeight = 'bold';
         applyButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
         
-        // Add hover effect
         applyButton.addEventListener('mouseover', () => {
             applyButton.style.backgroundColor = '#45a049';
         });
@@ -192,7 +168,7 @@
         
         applyButton.addEventListener('click', fillForm);
 
-        // Create the Load Profile button
+        // Load Profile button
         const loadButton = document.createElement('button');
         loadButton.textContent = 'Load Profile';
         loadButton.style.padding = '10px 20px';
@@ -205,7 +181,6 @@
         loadButton.style.fontWeight = 'bold';
         loadButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
         
-        // Add hover effect
         loadButton.addEventListener('mouseover', () => {
             loadButton.style.backgroundColor = '#1976D2';
         });
@@ -215,15 +190,8 @@
         
         loadButton.addEventListener('click', loadProfileFromFile);
         
-        // Add buttons to container and container to page
         container.appendChild(loadButton);
         container.appendChild(applyButton);
         document.body.appendChild(container);
-    }
-
-    // Initialize
-    window.addEventListener('load', function() {
-        addButtons();
-        console.log('QuickApply script loaded successfully');
     });
 })(); 
