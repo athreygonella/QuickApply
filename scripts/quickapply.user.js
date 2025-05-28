@@ -57,12 +57,25 @@
         if (!value) return false;
         
         const button = document.getElementById(id);
-        if (button) {
-            button.textContent = value;
-            button.dispatchEvent(new Event('change', { bubbles: true }));
-            return true;
-        }
-        return false;
+        if (!button) return false;
+
+        button.click();
+
+        setTimeout(() => {
+            const options = document.querySelectorAll('[role="option"]');
+            for (const option of options) {
+                if (option.textContent.trim() === value) {
+                    option.click();
+                    return true;
+                }
+            }
+            
+            console.log(`Could not find option: ${value}`);
+            document.body.click();
+            return false;
+        }, 100);
+
+        return true;
     }
 
     // Helper function to handle dropdowns by ID
@@ -83,13 +96,14 @@
     }
 
     // Function to fill radio buttons by name
-    function fillRadioByName(name, value) {
+    function fillRadioButtons(name, value) {
         if (!value) return false;
 
-        const radioButtons = document.getElementsByName(name);
+        const radioButtons = Array.from(document.getElementsByName(name)).filter(el => el instanceof HTMLInputElement);
+        
+        // click it! // don't do anything yet, i;ll come back to this
         for (const radio of radioButtons) {
-            if (radio.value.toLowerCase() === value.toLowerCase() ||
-                radio.parentElement.textContent.toLowerCase().includes(value.toLowerCase())) {
+            if (radio.value.toLowerCase() === value.toLowerCase()) {
                 radio.checked = true;
                 radio.dispatchEvent(new Event('change', { bubbles: true }));
                 return true;
@@ -128,10 +142,15 @@
         fillTextfield('education--graduationYear', PROFILE.graduationYear);
 
         // Common Questions
-        fillRadioByName('willing-to-relocate', PROFILE.willingToRelocate);
-        fillRadioByName('require-visa', PROFILE.requireVisa);
-        fillRadioByName('legally-authorized', PROFILE.legallyAuthorized);
-        fillRadioByName('remote-work', PROFILE.remoteWork);
+        fillRadioButtons('willing-to-relocate', PROFILE.willingToRelocate);
+        fillRadioButtons('require-visa', PROFILE.requireVisa);
+        fillRadioButtons('legally-authorized', PROFILE.legallyAuthorized);
+        fillRadioButtons('remote-work', PROFILE.remoteWork);
+
+        // Workday Default Questions
+        fillButtonDropdown('source--source', 'Company Website');
+        fillRadioButtons('candidateIsPreviousWorker', "Yes");
+        fillButtonDropdown('phoneNumber--phoneType', "Mobile");
     }
 
     window.addEventListener('load', function() {
