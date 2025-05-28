@@ -40,24 +40,40 @@
         fileInput.click();
     }
 
+    function haveBeenEmployed() {
+        const fieldset = document.querySelector('[data-automation-id="formField-candidateIsPreviousWorker"] fieldset');
+        if (!fieldset) return false;
+
+        const prevEmploymentQuestion = fieldset.querySelector('label span')?.textContent;
+        if (!prevEmploymentQuestion) return false;
+
+        const match = prevEmploymentQuestion.match(/(?:employed by|worked for)\s+([^?(]+)/i);
+        if (!match || !PROFILE?.workExperience) return false;
+
+        const companyNameInQuestion = match[1].trim();
+
+        return PROFILE.workExperience.some(job => {
+            const companyName = job.company.toLowerCase();
+            return companyNameInQuestion.toLowerCase().includes(companyName);
+        });
+    }
+
     function fillTextfield(id, value) {
-        if (!value) return false;
+        if (!value) return;
         
         const input = document.getElementById(id);
         if (input) {
             input.value = value;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
-            return true;
         }
-        return false;
     }
     
     function fillButtonDropdown(id, value) {
-        if (!value) return false;
+        if (!value) return;
         
         const button = document.getElementById(id);
-        if (!button) return false;
+        if (!button) return;
 
         button.click();
 
@@ -66,21 +82,17 @@
             for (const option of options) {
                 if (option.textContent.trim() === value) {
                     option.click();
-                    return true;
+                    return;
                 }
             }
             
             console.log(`Could not find option: ${value}`);
             document.body.click();
-            return false;
         }, 100);
-
-        return true;
     }
 
-    // Helper function to handle dropdowns by ID
     function fillDropdownById(id, value) {
-        if (!value) return false;
+        if (!value) return;
 
         const select = document.getElementById(id);
         if (select) {
@@ -88,28 +100,21 @@
                 if (option.text.toLowerCase().includes(value.toLowerCase())) {
                     select.value = option.value;
                     select.dispatchEvent(new Event('change', { bubbles: true }));
-                    return true;
                 }
             }
         }
-        return false;
     }
 
-    // Function to fill radio buttons by name
     function fillRadioButtons(name, value) {
-        if (!value) return false;
+        if (!value) return;
 
         const radioButtons = Array.from(document.getElementsByName(name)).filter(el => el instanceof HTMLInputElement);
         
-        // click it! // don't do anything yet, i;ll come back to this
         for (const radio of radioButtons) {
             if (radio.value.toLowerCase() === value.toLowerCase()) {
-                radio.checked = true;
-                radio.dispatchEvent(new Event('change', { bubbles: true }));
-                return true;
+                radio.click();
             }
         }
-        return false;
     }
 
     // Main function to fill the form
@@ -149,7 +154,7 @@
 
         // Workday Default Questions
         fillButtonDropdown('source--source', 'Company Website');
-        fillRadioButtons('candidateIsPreviousWorker', "Yes");
+        fillRadioButtons('candidateIsPreviousWorker', String(haveBeenEmployed()));
         fillButtonDropdown('phoneNumber--phoneType', "Mobile");
     }
 
