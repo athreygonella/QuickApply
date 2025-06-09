@@ -117,6 +117,105 @@
         }
     }
 
+    function fillWorkExperience() {
+        if (!PROFILE?.workExperience?.length) return;
+
+        const workExperienceSection = document.querySelector('[aria-labelledby="Work-Experience-section"]');
+        if (!workExperienceSection) return;
+
+        const experiencePanel = workExperienceSection.querySelector('[aria-labelledby="Work-Experience-1-panel"]');
+        
+        // If panel doesn't exist, click Add button to create it
+        if (!experiencePanel) {
+            const addButton = workExperienceSection.querySelector('[data-automation-id="add-button"]');
+            if (addButton) {
+                addButton.click();
+            }
+        }
+
+        // Whether we clicked Add or not, wait a moment then try to fill
+        setTimeout(() => {
+            const experiencePanel = workExperienceSection.querySelector('[aria-labelledby="Work-Experience-1-panel"]');
+            if (!experiencePanel) return;
+
+            const jobTitleInput = experiencePanel.querySelector('input[name="jobTitle"]');
+            if (jobTitleInput) {
+                fillTextfield(jobTitleInput.id, PROFILE.workExperience[0].jobTitle);
+            }
+
+            const companyInput = experiencePanel.querySelector('input[name="companyName"]');
+            if (companyInput) {
+                fillTextfield(companyInput.id, PROFILE.workExperience[0].company);
+            }
+
+            const locationInput = experiencePanel.querySelector('input[name="location"]');
+            if (locationInput) {
+                fillTextfield(locationInput.id, PROFILE.workExperience[0].location);
+            }
+
+            const currentlyWorkHereCheckbox = experiencePanel.querySelector('input[type="checkbox"][name="currentlyWorkHere"]');
+            if (currentlyWorkHereCheckbox) {
+                const shouldBeChecked = Boolean(PROFILE.workExperience[0].currentlyWorkingHere);
+                if (currentlyWorkHereCheckbox.checked !== shouldBeChecked) {
+                    currentlyWorkHereCheckbox.click();
+                }
+            }
+
+            // Parse 'from' field in MM/YYYY format
+            let fromMonth = '';
+            let fromYear = '';
+            if (PROFILE.workExperience[0].from) {
+                const match = PROFILE.workExperience[0].from.match(/^(\d{2})\/(\d{4})$/);
+                if (match) {
+                    fromMonth = match[1];
+                    fromYear = match[2];
+                }
+            }
+
+            const yearInput = experiencePanel.querySelector('input[aria-label="Year"]');
+            if (yearInput && fromYear) {
+                yearInput.value = fromYear;
+                yearInput.dispatchEvent(new Event('input', { bubbles: true }));
+                yearInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Update the display div for the year (query from experiencePanel)
+                const yearDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionYear-display"]');
+                if (yearDisplayDiv) {
+                    yearDisplayDiv.textContent = fromYear;
+                }
+            }
+
+            // Set the Month spinButton for 'from' date
+            const monthInput = experiencePanel.querySelector('input[aria-label="Month"]');
+            if (monthInput && fromMonth) {
+                monthInput.value = fromMonth;
+                monthInput.dispatchEvent(new Event('input', { bubbles: true }));
+                monthInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Update the display div for the month (query from experiencePanel)
+                const monthDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionMonth-display"]');
+                if (monthDisplayDiv) {
+                    monthDisplayDiv.textContent = fromMonth;
+                }
+            }
+
+            // Fill role description textarea
+            const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
+            if (roleDescriptionDiv) {
+                const textarea = roleDescriptionDiv.querySelector('textarea');
+                let roleDesc = PROFILE.workExperience[0].roleDescription;
+                if (Array.isArray(roleDesc)) {
+                    roleDesc = roleDesc.join('\n');
+                }
+                if (textarea && roleDesc) {
+                    textarea.value = roleDesc;
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        }, 100);
+    }
+
     // Main function to fill the form
     function fillForm() {
         if (!PROFILE) {
@@ -136,9 +235,7 @@
         fillTextfield('phoneNumber--phoneNumber', PROFILE.personalInfo.phone);
 
         // Work Experience
-        fillTextfield('experience--years', PROFILE.yearsOfExperience);
-        fillTextfield('currentCompany', PROFILE.currentCompany);
-        fillTextfield('currentRole', PROFILE.currentRole);
+        fillWorkExperience();
 
         // Education
         fillDropdownById('education--degree', PROFILE.highestDegree);
