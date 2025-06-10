@@ -194,14 +194,14 @@
         textarea.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    function fillWorkExperience() {
-        if (!PROFILE?.workExperience?.length) return;
+    function fillWorkExperience(workExperience) {
+        if (!workExperience?.length) return;
 
         const workExperienceSection = document.querySelector('[aria-labelledby="Work-Experience-section"]');
         if (!workExperienceSection) return;
 
-        for (let i = 1; i <= PROFILE.workExperience.length; i++) {
-            const jobData = PROFILE.workExperience[i - 1];
+        for (let i = 1; i <= workExperience.length; i++) {
+            const jobData = workExperience[i - 1];
             let experiencePanel = workExperienceSection.querySelector(`[aria-labelledby="Work-Experience-${i}-panel"]`);
 
             // If panel doesn't exist, click Add button to create it
@@ -247,7 +247,44 @@
                     }
                     fillTextarea(textarea, roleDesc);
                 }
-            }, 200 * i); // Stagger timeouts to allow panels to render
+            }, 1000); // Stagger timeouts to allow panels to render
+        }
+    }
+
+    function fillEducation(education) {
+        if (!education?.length) return;
+
+        const educationSection = document.querySelector('[aria-labelledby="Education-section"]');
+        if (!educationSection) return;
+
+        for (let i = 1; i <= education.length; i++) {
+            const eduData = education[i - 1];
+            let educationPanel = educationSection.querySelector(`[aria-labelledby="Education-${i}-panel"]`);
+
+            // If panel doesn't exist, click Add button to create it
+            if (!educationPanel) {
+                const addButton = educationSection.querySelector('[data-automation-id="add-button"]');
+                if (addButton) {
+                    addButton.click();
+                }
+            }
+
+            setTimeout(() => {
+                educationPanel = educationSection.querySelector(`[aria-labelledby="Education-${i}-panel"]`);
+                if (!educationPanel) return;
+
+                const schoolInput = educationPanel.querySelector('input[name="schoolName"]');
+                if (schoolInput) {
+                    fillTextfield(schoolInput.id, eduData.university);
+                }
+
+
+                const gpaInput = educationPanel.querySelector('input[name="gradeAverage"]');
+                if (gpaInput) {
+                    fillTextfield(gpaInput.id, eduData.gpa);
+                }
+
+            }, 1000);
         }
     }
 
@@ -270,13 +307,10 @@
         fillTextfield('phoneNumber--phoneNumber', PROFILE.personalInfo.phone);
 
         // Work Experience
-        fillWorkExperience();
+        fillWorkExperience(PROFILE.workExperience);
 
         // Education
-        fillDropdownById('education--degree', PROFILE.highestDegree);
-        fillTextfield('education--major', PROFILE.fieldOfStudy);
-        fillTextfield('education--school', PROFILE.university);
-        fillTextfield('education--graduationYear', PROFILE.graduationYear);
+        fillEducation(PROFILE.education);
 
         // Common Questions
         fillRadioButtons('willing-to-relocate', PROFILE.willingToRelocate);
