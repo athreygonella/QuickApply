@@ -124,13 +124,66 @@
         }
     }
 
-    function fillCalendarInput(input, value, displayDiv) {
-        if (!input || !value) return;
-        input.value = value;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        if (displayDiv) {
-            displayDiv.textContent = value;
+    function fillCalendarInput(experiencePanel, from, to, currentlyWorkingHere) {
+        let fromMonth = '';
+        let fromYear = '';
+        if (from) {
+            const match = from.match(/^(\d{2})\/(\d{4})$/);
+            if (match) {
+                fromMonth = match[1];
+                fromYear = match[2];
+            }
+        }
+
+        const startDateDiv = experiencePanel.querySelector('div[data-automation-id="formField-startDate"]');
+        if (startDateDiv) {
+            const yearInput = startDateDiv.querySelector('input[aria-label="Year"]');
+            const yearDisplayDiv = startDateDiv.querySelector('div[data-automation-id="dateSectionYear-display"]');
+            if (yearInput) {
+                yearInput.value = fromYear;
+                yearInput.dispatchEvent(new Event('input', { bubbles: true }));
+                yearInput.dispatchEvent(new Event('change', { bubbles: true }));
+                if (yearDisplayDiv) yearDisplayDiv.textContent = fromYear;
+            }
+            const monthInput = startDateDiv.querySelector('input[aria-label="Month"]');
+            const monthDisplayDiv = startDateDiv.querySelector('div[data-automation-id="dateSectionMonth-display"]');
+            if (monthInput) {
+                monthInput.value = fromMonth;
+                monthInput.dispatchEvent(new Event('input', { bubbles: true }));
+                monthInput.dispatchEvent(new Event('change', { bubbles: true }));
+                if (monthDisplayDiv) monthDisplayDiv.textContent = fromMonth;
+            }
+        }
+        // Fill To (End Date) calendar inputs if not currently working here
+        if (!currentlyWorkingHere) {
+            let toMonth = '';
+            let toYear = '';
+            if (to) {
+                const match = to.match(/^(\d{2})\/(\d{4})$/);
+                if (match) {
+                    toMonth = match[1];
+                    toYear = match[2];
+                }
+            }
+            const endDateDiv = experiencePanel.querySelector('div[data-automation-id="formField-endDate"]');
+            if (endDateDiv) {
+                const yearInput = endDateDiv.querySelector('input[aria-label="Year"]');
+                const yearDisplayDiv = endDateDiv.querySelector('div[data-automation-id="dateSectionYear-display"]');
+                if (yearInput) {
+                    yearInput.value = toYear;
+                    yearInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    yearInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (yearDisplayDiv) yearDisplayDiv.textContent = toYear;
+                }
+                const monthInput = endDateDiv.querySelector('input[aria-label="Month"]');
+                const monthDisplayDiv = endDateDiv.querySelector('div[data-automation-id="dateSectionMonth-display"]');
+                if (monthInput) {
+                    monthInput.value = toMonth;
+                    monthInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    monthInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (monthDisplayDiv) monthDisplayDiv.textContent = toMonth;
+                }
+            }
         }
     }
 
@@ -182,24 +235,7 @@
                 const currentlyWorkHereCheckbox = experiencePanel.querySelector('input[type="checkbox"][name="currentlyWorkHere"]');
                 fillCheckbox(currentlyWorkHereCheckbox, Boolean(jobData.currentlyWorkingHere));
 
-                // Parse 'from' field in MM/YYYY format
-                let fromMonth = '';
-                let fromYear = '';
-                if (jobData.from) {
-                    const match = jobData.from.match(/^(\d{2})\/(\d{4})$/);
-                    if (match) {
-                        fromMonth = match[1];
-                        fromYear = match[2];
-                    }
-                }
-
-                const yearInput = experiencePanel.querySelector('input[aria-label="Year"]');
-                const yearDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionYear-display"]');
-                fillCalendarInput(yearInput, fromYear, yearDisplayDiv);
-
-                const monthInput = experiencePanel.querySelector('input[aria-label="Month"]');
-                const monthDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionMonth-display"]');
-                fillCalendarInput(monthInput, fromMonth, monthDisplayDiv);
+                fillCalendarInput(experiencePanel, jobData.from, jobData.to, Boolean(jobData.currentlyWorkingHere));
 
                 // Fill role description textarea
                 const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
