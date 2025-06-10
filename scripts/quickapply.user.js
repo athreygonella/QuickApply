@@ -147,69 +147,72 @@
         const workExperienceSection = document.querySelector('[aria-labelledby="Work-Experience-section"]');
         if (!workExperienceSection) return;
 
-        const experiencePanel = workExperienceSection.querySelector('[aria-labelledby="Work-Experience-1-panel"]');
-        
-        // If panel doesn't exist, click Add button to create it
-        if (!experiencePanel) {
-            const addButton = workExperienceSection.querySelector('[data-automation-id="add-button"]');
-            if (addButton) {
-                addButton.click();
+        for (let i = 1; i <= PROFILE.workExperience.length; i++) {
+            const jobData = PROFILE.workExperience[i - 1];
+            let experiencePanel = workExperienceSection.querySelector(`[aria-labelledby="Work-Experience-${i}-panel"]`);
+
+            // If panel doesn't exist, click Add button to create it
+            if (!experiencePanel) {
+                const addButton = workExperienceSection.querySelector('[data-automation-id="add-button"]');
+                if (addButton) {
+                    addButton.click();
+                }
             }
+
+            // Wait for the panel to appear and then fill it
+            setTimeout(() => {
+                experiencePanel = workExperienceSection.querySelector(`[aria-labelledby="Work-Experience-${i}-panel"]`);
+                if (!experiencePanel) return;
+
+                const jobTitleInput = experiencePanel.querySelector('input[name="jobTitle"]');
+                if (jobTitleInput) {
+                    fillTextfield(jobTitleInput.id, jobData.jobTitle);
+                }
+
+                const companyInput = experiencePanel.querySelector('input[name="companyName"]');
+                if (companyInput) {
+                    fillTextfield(companyInput.id, jobData.company);
+                }
+
+                const locationInput = experiencePanel.querySelector('input[name="location"]');
+                if (locationInput) {
+                    fillTextfield(locationInput.id, jobData.location);
+                }
+
+                const currentlyWorkHereCheckbox = experiencePanel.querySelector('input[type="checkbox"][name="currentlyWorkHere"]');
+                fillCheckbox(currentlyWorkHereCheckbox, Boolean(jobData.currentlyWorkingHere));
+
+                // Parse 'from' field in MM/YYYY format
+                let fromMonth = '';
+                let fromYear = '';
+                if (jobData.from) {
+                    const match = jobData.from.match(/^(\d{2})\/(\d{4})$/);
+                    if (match) {
+                        fromMonth = match[1];
+                        fromYear = match[2];
+                    }
+                }
+
+                const yearInput = experiencePanel.querySelector('input[aria-label="Year"]');
+                const yearDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionYear-display"]');
+                fillCalendarInput(yearInput, fromYear, yearDisplayDiv);
+
+                const monthInput = experiencePanel.querySelector('input[aria-label="Month"]');
+                const monthDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionMonth-display"]');
+                fillCalendarInput(monthInput, fromMonth, monthDisplayDiv);
+
+                // Fill role description textarea
+                const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
+                if (roleDescriptionDiv) {
+                    const textarea = roleDescriptionDiv.querySelector('textarea');
+                    let roleDesc = jobData.roleDescription;
+                    if (Array.isArray(roleDesc)) {
+                        roleDesc = roleDesc.join('\n');
+                    }
+                    fillTextarea(textarea, roleDesc);
+                }
+            }, 200 * i); // Stagger timeouts to allow panels to render
         }
-
-        // Whether we clicked Add or not, wait a moment then try to fill
-        setTimeout(() => {
-            const experiencePanel = workExperienceSection.querySelector('[aria-labelledby="Work-Experience-1-panel"]');
-            if (!experiencePanel) return;
-
-            const jobTitleInput = experiencePanel.querySelector('input[name="jobTitle"]');
-            if (jobTitleInput) {
-                fillTextfield(jobTitleInput.id, PROFILE.workExperience[0].jobTitle);
-            }
-
-            const companyInput = experiencePanel.querySelector('input[name="companyName"]');
-            if (companyInput) {
-                fillTextfield(companyInput.id, PROFILE.workExperience[0].company);
-            }
-
-            const locationInput = experiencePanel.querySelector('input[name="location"]');
-            if (locationInput) {
-                fillTextfield(locationInput.id, PROFILE.workExperience[0].location);
-            }
-
-            const currentlyWorkHereCheckbox = experiencePanel.querySelector('input[type="checkbox"][name="currentlyWorkHere"]');
-            fillCheckbox(currentlyWorkHereCheckbox, Boolean(PROFILE.workExperience[0].currentlyWorkingHere));
-
-            // Parse 'from' field in MM/YYYY format
-            let fromMonth = '';
-            let fromYear = '';
-            if (PROFILE.workExperience[0].from) {
-                const match = PROFILE.workExperience[0].from.match(/^(\d{2})\/(\d{4})$/);
-                if (match) {
-                    fromMonth = match[1];
-                    fromYear = match[2];
-                }
-            }
-
-            const yearInput = experiencePanel.querySelector('input[aria-label="Year"]');
-            const yearDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionYear-display"]');
-            fillCalendarInput(yearInput, fromYear, yearDisplayDiv);
-
-            const monthInput = experiencePanel.querySelector('input[aria-label="Month"]');
-            const monthDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionMonth-display"]');
-            fillCalendarInput(monthInput, fromMonth, monthDisplayDiv);
-
-            // Fill role description textarea
-            const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
-            if (roleDescriptionDiv) {
-                const textarea = roleDescriptionDiv.querySelector('textarea');
-                let roleDesc = PROFILE.workExperience[0].roleDescription;
-                if (Array.isArray(roleDesc)) {
-                    roleDesc = roleDesc.join('\n');
-                }
-                fillTextarea(textarea, roleDesc);
-            }
-        }, 100);
     }
 
     // Main function to fill the form
