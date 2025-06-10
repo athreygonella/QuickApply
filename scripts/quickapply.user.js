@@ -117,6 +117,30 @@
         }
     }
 
+    function fillCheckbox(input, shouldBeChecked) {
+        if (!input) return;
+        if (input.checked !== shouldBeChecked) {
+            input.click();
+        }
+    }
+
+    function fillCalendarInput(input, value, displayDiv) {
+        if (!input || !value) return;
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        if (displayDiv) {
+            displayDiv.textContent = value;
+        }
+    }
+
+    function fillTextarea(textarea, value) {
+        if (!textarea || !value) return;
+        textarea.value = value;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     function fillWorkExperience() {
         if (!PROFILE?.workExperience?.length) return;
 
@@ -154,12 +178,7 @@
             }
 
             const currentlyWorkHereCheckbox = experiencePanel.querySelector('input[type="checkbox"][name="currentlyWorkHere"]');
-            if (currentlyWorkHereCheckbox) {
-                const shouldBeChecked = Boolean(PROFILE.workExperience[0].currentlyWorkingHere);
-                if (currentlyWorkHereCheckbox.checked !== shouldBeChecked) {
-                    currentlyWorkHereCheckbox.click();
-                }
-            }
+            fillCheckbox(currentlyWorkHereCheckbox, Boolean(PROFILE.workExperience[0].currentlyWorkingHere));
 
             // Parse 'from' field in MM/YYYY format
             let fromMonth = '';
@@ -173,31 +192,12 @@
             }
 
             const yearInput = experiencePanel.querySelector('input[aria-label="Year"]');
-            if (yearInput && fromYear) {
-                yearInput.value = fromYear;
-                yearInput.dispatchEvent(new Event('input', { bubbles: true }));
-                yearInput.dispatchEvent(new Event('change', { bubbles: true }));
+            const yearDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionYear-display"]');
+            fillCalendarInput(yearInput, fromYear, yearDisplayDiv);
 
-                // Update the display div for the year (query from experiencePanel)
-                const yearDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionYear-display"]');
-                if (yearDisplayDiv) {
-                    yearDisplayDiv.textContent = fromYear;
-                }
-            }
-
-            // Set the Month spinButton for 'from' date
             const monthInput = experiencePanel.querySelector('input[aria-label="Month"]');
-            if (monthInput && fromMonth) {
-                monthInput.value = fromMonth;
-                monthInput.dispatchEvent(new Event('input', { bubbles: true }));
-                monthInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-                // Update the display div for the month (query from experiencePanel)
-                const monthDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionMonth-display"]');
-                if (monthDisplayDiv) {
-                    monthDisplayDiv.textContent = fromMonth;
-                }
-            }
+            const monthDisplayDiv = experiencePanel.querySelector('div[data-automation-id="dateSectionMonth-display"]');
+            fillCalendarInput(monthInput, fromMonth, monthDisplayDiv);
 
             // Fill role description textarea
             const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
@@ -207,11 +207,7 @@
                 if (Array.isArray(roleDesc)) {
                     roleDesc = roleDesc.join('\n');
                 }
-                if (textarea && roleDesc) {
-                    textarea.value = roleDesc;
-                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                    textarea.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+                fillTextarea(textarea, roleDesc);
             }
         }, 100);
     }
@@ -315,4 +311,4 @@
         container.appendChild(applyButton);
         document.body.appendChild(container);
     });
-})(); 
+})();
