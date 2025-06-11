@@ -69,14 +69,9 @@
         }
     }
     
-    function fillButtonDropdown(id, value) {
-        if (!value) return;
-        
-        const button = document.getElementById(id);
-        if (!button) return;
-
-        button.click();
-
+    function fillButtonDropdown(element, value) {
+        if (!value || !element) return;
+        element.click();
         setTimeout(() => {
             const options = document.querySelectorAll('[role="option"]');
             for (const option of options) {
@@ -85,10 +80,43 @@
                     return;
                 }
             }
-            
             console.log(`Could not find option: ${value}`);
             document.body.click();
         }, 100);
+    }
+
+    function fillListDropdown(inputElement, value) {
+        if (!value || !inputElement) return;
+        inputElement.click();
+        setTimeout(() => {
+            const majorContainer = document.querySelector('div[data-automation-id="activeListContainer"]');
+            if (!majorContainer) return;
+            let lastScrollTop = -1;
+            let attempts = 0;
+            const maxAttempts = 50;
+
+            function trySelect() {
+                const options = Array.from(majorContainer.querySelectorAll('div[aria-label]'));
+                const option = options.find(div => div.getAttribute('aria-label').toLowerCase().includes(value.toLowerCase()));
+                if (option) {
+                    // Try to find and click the input (radio button) inside the div
+                    const radio = option.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.click();
+                    }
+                    return;
+                }
+                // If not found, scroll down and try again
+                if (majorContainer.scrollTop !== lastScrollTop && attempts < maxAttempts) {
+                    lastScrollTop = majorContainer.scrollTop;
+                    majorContainer.scrollTop += 500; // Scroll down (empirically determined value)
+                    attempts++;
+                    setTimeout(trySelect, 400);
+                }
+            }
+            trySelect();
+            document.body.click();
+        }, 2000);
     }
 
     function fillDropdownById(id, value) {
@@ -278,6 +306,16 @@
                     fillTextfield(schoolInput.id, eduData.university);
                 }
 
+                const degreeInput = educationPanel.querySelector('button[name="degree"]');
+                if (degreeInput && eduData.degree) {
+                    fillButtonDropdown(degreeInput, eduData.degree);
+                }
+                
+                const fieldOfStudyContainer = educationPanel.querySelector('div[data-automation-id="formField-fieldOfStudy"]');
+                if (fieldOfStudyContainer) {
+                    const fieldOfStudyInput = fieldOfStudyContainer.querySelector('input[data-uxi-widget-type="selectinput"]');
+                    fillListDropdown(fieldOfStudyInput, eduData.major);
+                }
 
                 const gpaInput = educationPanel.querySelector('input[name="gradeAverage"]');
                 if (gpaInput) {
@@ -301,7 +339,7 @@
         
         fillTextfield('address--addressLine1', PROFILE.personalInfo.address);
         fillTextfield('address--city', PROFILE.personalInfo.city);
-        fillButtonDropdown('address--countryRegion', PROFILE.personalInfo.state);
+        fillButtonDropdown(document.getElementById('address--countryRegion'), PROFILE.personalInfo.state);
         fillTextfield('address--postalCode', PROFILE.personalInfo.zipCode);
         
         fillTextfield('phoneNumber--phoneNumber', PROFILE.personalInfo.phone);
@@ -319,9 +357,9 @@
         fillRadioButtons('remote-work', PROFILE.remoteWork);
 
         // Workday Default Questions
-        fillButtonDropdown('source--source', 'Company Website');
+        fillButtonDropdown(document.getElementById('source--source'), 'Company Website');
         fillRadioButtons('candidateIsPreviousWorker', String(haveBeenEmployed()));
-        fillButtonDropdown('phoneNumber--phoneType', "Mobile");
+        fillButtonDropdown(document.getElementById('phoneNumber--phoneType'), "Mobile");
     }
 
     window.addEventListener('load', function() {
