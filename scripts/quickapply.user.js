@@ -279,6 +279,25 @@
         }
     }
 
+    function fillYearInput(yearDiv, year) {
+        if (!yearDiv || !year) return;
+
+        const yearInput = yearDiv.querySelector('input[data-automation-id="dateSectionYear-input"]');
+        const yearDisplayDiv = yearDiv.querySelector('div[data-automation-id="dateSectionYear-display"]');
+
+        if (yearInput) {
+            yearInput.value = year;
+            yearInput.setAttribute('aria-valuenow', year);
+            yearInput.setAttribute('aria-valuetext', year);
+            yearInput.dispatchEvent(new Event('input', { bubbles: true }));
+            yearInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (yearDisplayDiv) {
+            yearDisplayDiv.textContent = year;
+        }
+    }
+
     function fillEducation(education) {
         if (!education?.length) return;
 
@@ -322,7 +341,51 @@
                     fillTextfield(gpaInput.id, eduData.gpa);
                 }
 
+                const startYearDiv = educationPanel.querySelector('div[data-automation-id="formField-firstYearAttended"]');
+                fillYearInput(startYearDiv, eduData.from);
+                const finalYearDiv = educationPanel.querySelector('div[data-automation-id="formField-lastYearAttended"]');
+                fillYearInput(finalYearDiv, eduData.to);
             }, 1000);
+        }
+    }
+
+    function fillWebsites(websites) {
+        if (!websites?.length) return;
+
+        const websitesSection = document.querySelector('[aria-labelledby="Websites-section"]');
+        if (!websitesSection) return;
+
+        for (let i = 1; i <= websites.length; i++) {
+            const websiteData = websites[i - 1];
+            const url = Object.values(websiteData)[0]; // Extract the value of the first field
+            let websitePanel = websitesSection.querySelector(`[aria-labelledby="Websites-${i}-panel"]`);
+
+            // If panel doesn't exist, click Add button to create it
+            if (!websitePanel) {
+                const addButton = websitesSection.querySelector('[data-automation-id="add-button"]');
+                if (addButton) {
+                    addButton.click();
+                }
+            }
+
+            setTimeout(() => {
+                websitePanel = websitesSection.querySelector(`[aria-labelledby="Websites-${i}-panel"]`);
+                if (!websitePanel) return;
+
+                const urlInput = websitePanel.querySelector('input[name="url"]');
+                if (urlInput) {
+                    fillTextfield(urlInput.id, url);
+                }
+            }, 1000);
+        }
+    }
+
+    function uploadResume() {
+        const resumeButton = document.getElementById('resumeAttachments--attachments');
+        if (resumeButton) {
+            resumeButton.click(); // Simulate a click to open the file picker dialog
+        } else {
+            console.error('Resume upload button not found');
         }
     }
 
@@ -349,6 +412,15 @@
 
         // Education
         fillEducation(PROFILE.education);
+
+        // Websites
+        fillWebsites(PROFILE.links);
+
+        // Resume
+        const resumeButton = document.getElementById('resumeAttachments--attachments');
+        if (resumeButton) {
+            alert('Please click the Upload Resume button to proceed.');
+        }
 
         // Common Questions
         fillRadioButtons('willing-to-relocate', PROFILE.willingToRelocate);
@@ -417,9 +489,33 @@
         });
         
         loadButton.addEventListener('click', loadProfileFromFile);
-        
+
+        // Upload Resume button
+        const uploadResumeButton = document.createElement('button');
+        uploadResumeButton.textContent = 'Upload Resume';
+        uploadResumeButton.style.padding = '10px 20px';
+        uploadResumeButton.style.backgroundColor = '#FF9800';
+        uploadResumeButton.style.color = 'white';
+        uploadResumeButton.style.border = 'none';
+        uploadResumeButton.style.borderRadius = '5px';
+        uploadResumeButton.style.cursor = 'pointer';
+        uploadResumeButton.style.fontSize = '14px';
+        uploadResumeButton.style.fontWeight = 'bold';
+        uploadResumeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        uploadResumeButton.id = 'uploadResumeButton';
+
+        uploadResumeButton.addEventListener('mouseover', () => {
+            uploadResumeButton.style.backgroundColor = '#FB8C00';
+        });
+        uploadResumeButton.addEventListener('mouseout', () => {
+            uploadResumeButton.style.backgroundColor = '#FF9800';
+        });
+
+        uploadResumeButton.addEventListener('click', uploadResume);
+
         container.appendChild(loadButton);
         container.appendChild(applyButton);
+        container.appendChild(uploadResumeButton);
         document.body.appendChild(container);
     });
 })();
