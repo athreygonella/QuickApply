@@ -69,20 +69,24 @@
         }
     }
     
-    function fillButtonDropdown(element, value) {
-        if (!value || !element) return;
-        element.click();
-        setTimeout(() => {
-            const options = document.querySelectorAll('[role="option"]');
-            for (const option of options) {
-                if (option.textContent.trim() === value) {
-                    option.click();
-                    return;
+    async function fillButtonDropdown(element, value) {
+        if (!value || !element) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            element.click();
+
+            setTimeout(() => {
+                const options = document.querySelectorAll('[role="option"]');
+                for (const option of options) {
+                    if (option.textContent.trim() === value) {
+                        option.click();
+                        break;
+                    }
                 }
-            }
-            console.log(`Could not find option: ${value}`);
-            document.body.click();
-        }, 100);
+                document.body.click();
+                resolve();
+            }, 500); // Delay to allow previous dropdown to close and new one to open
+        });
     }
 
     function fillListDropdown(inputElement, value) {
@@ -389,6 +393,37 @@
         }
     }
 
+    function answerEligibilityQuestions() {
+        const questionnaireSection = document.querySelector('[aria-labelledby="primaryQuestionnaire-section"]');
+        if (questionnaireSection) {
+            const questionDivs = Array.from(questionnaireSection.children).flatMap(child => Array.from(child.children));
+            const buttons = [];
+
+            questionDivs.forEach(div => {
+                const questionText = div.querySelector('p')?.textContent;
+                if (questionText) {
+                    if (questionText.includes('legally authorized')) {
+                        const button = div.querySelector('button');
+                        if (button) {
+                            buttons.push({ button, value: 'Yes' });
+                        }
+                    } else if (questionText.includes('require') && questionText.includes('sponsorship')) {
+                        const button = div.querySelector('button');
+                        if (button) {
+                            buttons.push({ button, value: 'No' });
+                        }
+                    }
+                }
+            });
+
+            let chain = Promise.resolve();
+
+            buttons.forEach(({ button, value }) => {
+                chain = chain.then(() => fillButtonDropdown(button, value));
+            });
+        }
+    }
+
     // Main function to fill the form
     function fillForm() {
         if (!PROFILE) {
@@ -421,6 +456,8 @@
         if (resumeButton) {
             alert('Please click the Upload Resume button to proceed.');
         }
+
+        answerEligibilityQuestions();
 
         // Common Questions
         fillRadioButtons('willing-to-relocate', PROFILE.willingToRelocate);
