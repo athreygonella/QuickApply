@@ -393,24 +393,46 @@
         }
     }
 
-    function answerEligibilityQuestions() {
-        const questionnaireSection = document.querySelector('[aria-labelledby="primaryQuestionnaire-section"]');
+    function answerEligibilityQuestions(sectionLabel) {
+        const questionnaireSection = document.querySelector(`[aria-labelledby="${sectionLabel}"]`);
         if (questionnaireSection) {
             const questionDivs = Array.from(questionnaireSection.children).flatMap(child => Array.from(child.children));
             const buttons = [];
 
             questionDivs.forEach(div => {
-                const questionText = div.querySelector('p')?.textContent;
+                const questionText = div.querySelector('p')?.textContent?.toLowerCase(); // Convert to lowercase for case-insensitivity
                 if (questionText) {
-                    if (questionText.includes('legally authorized')) {
+                    if (
+                        questionText.includes('legally authorized') ||
+                        questionText.includes('by selecting yes') ||
+                        questionText.includes('eligible to work') ||
+                        questionText.includes('at least 18')
+                    ) {
                         const button = div.querySelector('button');
                         if (button) {
                             buttons.push({ button, value: 'Yes' });
                         }
-                    } else if (questionText.includes('require') && questionText.includes('sponsorship')) {
+                    } else if (
+                        questionText.includes('require') && questionText.includes('sponsorship') ||
+                        questionText.includes('provides to your employer') ||
+                        questionText.includes('reseller') ||
+                        questionText.includes('on site') ||
+                        questionText.includes('non-compete') ||
+                        questionText.includes('has a relationship') ||
+                        questionText.includes('are you a foreign national') ||
+                        questionText.includes('involuntarily discharged') ||
+                        (questionText.includes('employed by') && questionText.includes('government')) ||
+                        questionText.includes('competition with') ||
+                        questionText.includes('work visa')
+                    ) {
                         const button = div.querySelector('button');
                         if (button) {
                             buttons.push({ button, value: 'No' });
+                        }
+                    } else if (questionText.includes('preferred method of communication')) {
+                        const button = div.querySelector('button');
+                        if (button) {
+                            buttons.push({ button, value: 'Email' });
                         }
                     }
                 }
@@ -457,13 +479,9 @@
             alert('Please click the Upload Resume button to proceed.');
         }
 
-        answerEligibilityQuestions();
-
-        // Common Questions
-        fillRadioButtons('willing-to-relocate', PROFILE.willingToRelocate);
-        fillRadioButtons('require-visa', PROFILE.requireVisa);
-        fillRadioButtons('legally-authorized', PROFILE.legallyAuthorized);
-        fillRadioButtons('remote-work', PROFILE.remoteWork);
+        // Eligibility
+        answerEligibilityQuestions('primaryQuestionnaire-section');
+        answerEligibilityQuestions('secondaryQuestionnaire-section');
 
         // Workday Default Questions
         fillButtonDropdown(document.getElementById('source--source'), 'Company Website');
