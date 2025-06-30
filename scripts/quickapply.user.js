@@ -78,7 +78,8 @@
             setTimeout(() => {
                 const options = document.querySelectorAll('[role="option"]');
                 for (const option of options) {
-                    if (option.textContent.trim() === value) {
+                    const optionText = option.textContent.trim();
+                    if (optionText === value || optionText.includes(value)) {
                         option.click();
                         break;
                     }
@@ -87,6 +88,16 @@
                 resolve();
             }, 500); // Delay to allow previous dropdown to close and new one to open
         });
+    }
+
+    function fillButtonDropdownsSequentially(buttonValuePairs) {
+        let chain = Promise.resolve();
+
+        buttonValuePairs.forEach(({ button, value }) => {
+            chain = chain.then(() => fillButtonDropdown(button, value));
+        });
+
+        return chain;
     }
 
     function fillListDropdown(inputElement, value) {
@@ -400,7 +411,7 @@
             const buttons = [];
 
             questionDivs.forEach(div => {
-                const questionText = div.querySelector('p')?.textContent?.toLowerCase(); // Convert to lowercase for case-insensitivity
+                const questionText = div.querySelector('p')?.textContent?.toLowerCase();
                 if (questionText) {
                     if (
                         questionText.includes('legally authorized') ||
@@ -438,10 +449,87 @@
                 }
             });
 
-            let chain = Promise.resolve();
+            fillButtonDropdownsSequentially(buttons);
+        }
+    }
 
-            buttons.forEach(({ button, value }) => {
-                chain = chain.then(() => fillButtonDropdown(button, value));
+    function fillIdentityPage1(identity) {
+        if (!identity) return;
+
+        // 1st page
+        const personalDataSection = document.querySelector('[aria-labelledby="Personal-Data-Statement-section"]');
+        if (!personalDataSection) return;
+
+        const buttons = [];
+
+        const genderField = personalDataSection.querySelector('div[data-automation-id="formField-gender"]');
+        if (genderField) {
+            const genderButton = genderField.querySelector('button');
+            if (genderButton) {
+                buttons.push({ button: genderButton, value: identity.gender });
+            }
+        }
+
+        const ethnicityField = personalDataSection.querySelector('div[data-automation-id="formField-ethnicity"]');
+        if (ethnicityField) {
+            const ethnicityButton = ethnicityField.querySelector('button');
+            if (ethnicityButton) {
+                buttons.push({ button: ethnicityButton, value: identity.ethnicity });
+            }
+        }
+
+        const veteranStatusField = personalDataSection.querySelector('div[data-automation-id="formField-veteranStatus"]');
+        if (veteranStatusField) {
+            const veteranStatusButton = veteranStatusField.querySelector('button');
+            if (veteranStatusButton) {
+                buttons.push({ button: veteranStatusButton, value: identity.isVeteran });
+            }
+        }
+    }
+
+    function fillIdentityPage2() {
+        const selfIdentifiedDisabilitySection = document.querySelector('[aria-labelledby="selfIdentifiedDisabilityData-section"]');
+        if (!selfIdentifiedDisabilitySection) return;
+
+        const nameField = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-name"]');
+        if (nameField) {
+            const nameInput = nameField.querySelector('input[type="text"]');
+            if (nameInput) {
+                fillTextfield(nameInput.id, `${PROFILE.personalInfo.firstName} ${PROFILE.personalInfo.lastName}`);
+            } 
+        }
+
+        // not working! todo
+        // let currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
+        // const currentMonthTwoDigit = currentMonth < 10 ? `0${currentMonth}` : `${currentMonth}`; // Ensure two-digit format
+
+        // const monthDiv = selfIdentifiedDisabilitySection.querySelector('#selfIdentifiedDisabilityData--dateSignedOn-dateSectionMonth');
+        // if (monthDiv) {
+        //     const monthDisplayDiv = monthDiv.querySelector('#selfIdentifiedDisabilityData--dateSignedOn-dateSectionMonth-display');
+        //     if (monthDisplayDiv) {
+        //         monthDisplayDiv.textContent = currentMonthTwoDigit;
+        //     }
+
+        //     const monthInput = monthDiv.querySelector('input');
+        //     if (monthInput) {
+        //         monthInput.setAttribute('aria-valuetext', currentMonth);
+        //         monthInput.setAttribute('aria-valuenow', currentMonth);
+        //         monthInput.value = currentMonth; // Set value to single-digit format
+        //         monthInput.setAttribute('value', currentMonth); // Update the value attribute
+        //     }
+        // }
+
+        const disabilityStatusField = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-disabilityStatus"]');
+        if (disabilityStatusField) {
+            const rowDivs = disabilityStatusField.querySelectorAll('div[role="row"]');
+            rowDivs.forEach(rowDiv => {
+                const label = rowDiv.querySelector('label');
+                if (label && label.textContent.includes('do not have a disability')) {
+                    const checkbox = rowDiv.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        fillCheckbox(checkbox, true);
+                    }
+                }
             });
         }
     }
@@ -483,10 +571,20 @@
         answerEligibilityQuestions('primaryQuestionnaire-section');
         answerEligibilityQuestions('secondaryQuestionnaire-section');
 
+        // Identity
+        fillIdentityPage1(PROFILE.identity);
+        fillIdentityPage2();
+
         // Workday Default Questions
         fillButtonDropdown(document.getElementById('source--source'), 'Company Website');
         fillRadioButtons('candidateIsPreviousWorker', String(haveBeenEmployed()));
         fillButtonDropdown(document.getElementById('phoneNumber--phoneType'), "Mobile");
+
+        // Terms and Conditions
+        const termsCheckbox = document.getElementById('termsAndConditions--acceptTermsAndAgreements');
+        if (termsCheckbox) {
+            fillCheckbox(termsCheckbox, true);
+        }
     }
 
     window.addEventListener('load', function() {
