@@ -154,25 +154,19 @@
     }
 
     function fillCalendarInput(rootDateDiv, date) {
-        let dateMonth = '';
-        let dateYear = '';
-        if (date) {
-            const match = date.match(/^(\d{2})\/(\d{4})$/);
-            if (match) {
-                dateMonth = match[1];
-                dateYear = match[2];
-            }
-        }
+        const dateYear = date.getFullYear().toString();
+        const dateMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dateDay = date.getDate().toString().padStart(2, '0');
 
         if (rootDateDiv) {
             const helpTextDiv = rootDateDiv.querySelector('div[id^="helpText-workExperience"]');
-            if (helpTextDiv && dateMonth && dateYear) {
+            if (helpTextDiv) {
                 helpTextDiv.textContent = `current value is ${dateMonth.startsWith('0') ? dateMonth.slice(1) : dateMonth}/${dateYear}`;
             }
 
             const yearInput = rootDateDiv.querySelector('input[aria-label="Year"]');
             const yearDisplayDiv = rootDateDiv.querySelector('div[data-automation-id="dateSectionYear-display"]');
-            if (yearInput) {
+            if (yearInput && dateYear) {
                 yearInput.setAttribute('aria-valuetext', dateYear);
                 yearInput.setAttribute('value', dateYear);
                 yearInput.setAttribute('aria-valuenow', dateYear);
@@ -180,9 +174,10 @@
                 yearInput.dispatchEvent(new Event('change', { bubbles: true }));
                 if (yearDisplayDiv) yearDisplayDiv.textContent = dateYear;
             }
+
             const monthInput = rootDateDiv.querySelector('input[aria-label="Month"]');
             const monthDisplayDiv = rootDateDiv.querySelector('div[data-automation-id="dateSectionMonth-display"]');
-            if (monthInput) {
+            if (monthInput && dateMonth) {
                 const formattedMonth = dateMonth.startsWith('0') ? dateMonth.slice(1) : dateMonth;
                 monthInput.setAttribute('aria-valuetext', formattedMonth);
                 monthInput.setAttribute('value', formattedMonth);
@@ -190,6 +185,17 @@
                 monthInput.dispatchEvent(new Event('input', { bubbles: true }));
                 monthInput.dispatchEvent(new Event('change', { bubbles: true }));
                 if (monthDisplayDiv) monthDisplayDiv.textContent = dateMonth;
+            }
+
+            const dayInput = rootDateDiv.querySelector('input[aria-label="Day"]');
+            const dayDisplayDiv = rootDateDiv.querySelector('div[data-automation-id="dateSectionDay-display"]');
+            if (dayInput && dateDay) {
+                dayInput.setAttribute('aria-valuetext', dateDay);
+                dayInput.setAttribute('value', dateDay);
+                dayInput.setAttribute('aria-valuenow', dateDay);
+                dayInput.dispatchEvent(new Event('input', { bubbles: true }));
+                dayInput.dispatchEvent(new Event('change', { bubbles: true }));
+                if (dayDisplayDiv) dayDisplayDiv.textContent = dateDay;
             }
         }
     }
@@ -243,15 +249,14 @@
                 fillCheckbox(currentlyWorkHereCheckbox, Boolean(jobData.currentlyWorkingHere));
 
                 const startDateDiv = experiencePanel.querySelector('div[data-automation-id="formField-startDate"]');
-                fillCalendarInput(startDateDiv, jobData.from);
+                const startDate = new Date(jobData.from.year, jobData.from.month - 1); // Month is zero-based
+                fillCalendarInput(startDateDiv, startDate);
 
                 if (!Boolean(jobData.currentlyWorkingHere)) {
                     const endDateDiv = experiencePanel.querySelector('div[data-automation-id="formField-endDate"]');
-                    fillCalendarInput(endDateDiv, jobData.to);
+                    const endDate = new Date(jobData.to.year, jobData.to.month - 1); // Month is zero-based
+                    fillCalendarInput(endDateDiv, endDate);
                 }
-
-                // DELETE (todo)
-                fillCalendarInput(experiencePanel, jobData.from, jobData.to, Boolean(jobData.currentlyWorkingHere));
 
                 // Fill role description textarea
                 const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
@@ -474,6 +479,13 @@
             } 
         }
 
+        const dateSignedOnDiv = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-dateSignedOn"]');
+        if (dateSignedOnDiv) {
+            const currentDate = new Date();
+            fillCalendarInput(dateSignedOnDiv, new Date());
+        }
+
+        // The following code is commented out because it was not working as expected. DO NOT REMOVE!
         // not working! todo
         // let currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
         // const currentMonthTwoDigit = currentMonth < 10 ? `0${currentMonth}` : `${currentMonth}`; // Ensure two-digit format
