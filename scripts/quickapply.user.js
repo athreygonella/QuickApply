@@ -167,12 +167,14 @@
             const yearInput = rootDateDiv.querySelector('input[aria-label="Year"]');
             const yearDisplayDiv = rootDateDiv.querySelector('div[data-automation-id="dateSectionYear-display"]');
             if (yearInput && dateYear) {
+                yearInput.focus(); // only needs to be done once
                 yearInput.setAttribute('aria-valuetext', dateYear);
                 yearInput.setAttribute('value', dateYear);
                 yearInput.setAttribute('aria-valuenow', dateYear);
                 yearInput.dispatchEvent(new Event('input', { bubbles: true }));
                 yearInput.dispatchEvent(new Event('change', { bubbles: true }));
                 if (yearDisplayDiv) yearDisplayDiv.textContent = dateYear;
+                yearInput.blur(); 
             }
 
             const monthInput = rootDateDiv.querySelector('input[aria-label="Month"]');
@@ -202,9 +204,14 @@
 
     function fillTextarea(textarea, value) {
         if (!textarea || !value) return;
+        textarea.focus();
+
         textarea.value = value;
+        textarea.textContent = value;
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
         textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+        textarea.blur();
     }
 
     function fillWorkExperience(workExperience) {
@@ -279,11 +286,13 @@
         const yearDisplayDiv = yearDiv.querySelector('div[data-automation-id="dateSectionYear-display"]');
 
         if (yearInput) {
+            yearInput.focus();
             yearInput.value = year;
             yearInput.setAttribute('aria-valuenow', year);
             yearInput.setAttribute('aria-valuetext', year);
             yearInput.dispatchEvent(new Event('input', { bubbles: true }));
             yearInput.dispatchEvent(new Event('change', { bubbles: true }));
+            yearInput.blur();
         }
 
         if (yearDisplayDiv) {
