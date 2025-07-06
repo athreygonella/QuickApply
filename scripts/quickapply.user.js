@@ -490,30 +490,8 @@
 
         const dateSignedOnDiv = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-dateSignedOn"]');
         if (dateSignedOnDiv) {
-            const currentDate = new Date();
             fillCalendarInput(dateSignedOnDiv, new Date());
         }
-
-        // The following code is commented out because it was not working as expected. DO NOT REMOVE!
-        // not working! todo
-        // let currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
-        // const currentMonthTwoDigit = currentMonth < 10 ? `0${currentMonth}` : `${currentMonth}`; // Ensure two-digit format
-
-        // const monthDiv = selfIdentifiedDisabilitySection.querySelector('#selfIdentifiedDisabilityData--dateSignedOn-dateSectionMonth');
-        // if (monthDiv) {
-        //     const monthDisplayDiv = monthDiv.querySelector('#selfIdentifiedDisabilityData--dateSignedOn-dateSectionMonth-display');
-        //     if (monthDisplayDiv) {
-        //         monthDisplayDiv.textContent = currentMonthTwoDigit;
-        //     }
-
-        //     const monthInput = monthDiv.querySelector('input');
-        //     if (monthInput) {
-        //         monthInput.setAttribute('aria-valuetext', currentMonth);
-        //         monthInput.setAttribute('aria-valuenow', currentMonth);
-        //         monthInput.value = currentMonth; // Set value to single-digit format
-        //         monthInput.setAttribute('value', currentMonth); // Update the value attribute
-        //     }
-        // }
 
         const disabilityStatusField = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-disabilityStatus"]');
         if (disabilityStatusField) {
