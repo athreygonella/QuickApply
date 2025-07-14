@@ -345,53 +345,31 @@
         }
     }
 
-    function answerEligibilityQuestions(sectionLabel) {
-        const questionnaireSection = document.querySelector(`[aria-labelledby="${sectionLabel}"]`);
-        if (questionnaireSection) {
-            const questionDivs = Array.from(questionnaireSection.children).flatMap(child => Array.from(child.children));
-            const buttons = [];
+    function fillEligibilitySectionItem(questionnaireSection, eligibilityQuestionData) {
+        if (!questionnaireSection || !eligibilityQuestionData?.length) return;
 
-            questionDivs.forEach(div => {
-                const questionText = div.querySelector('p')?.textContent?.toLowerCase();
-                if (questionText) {
-                    if (
-                        questionText.includes('legally authorized') ||
-                        questionText.includes('by selecting yes') ||
-                        questionText.includes('eligible to work') ||
-                        questionText.includes('at least 18')
-                    ) {
-                        const button = div.querySelector('button');
-                        if (button) {
-                            buttons.push({ button, value: 'Yes' });
-                        }
-                    } else if (
-                        questionText.includes('require') && questionText.includes('sponsorship') ||
-                        questionText.includes('provides to your employer') ||
-                        questionText.includes('reseller') ||
-                        questionText.includes('on site') ||
-                        questionText.includes('non-compete') ||
-                        questionText.includes('has a relationship') ||
-                        questionText.includes('are you a foreign national') ||
-                        questionText.includes('involuntarily discharged') ||
-                        (questionText.includes('employed by') && questionText.includes('government')) ||
-                        questionText.includes('competition with') ||
-                        questionText.includes('work visa')
-                    ) {
-                        const button = div.querySelector('button');
-                        if (button) {
-                            buttons.push({ button, value: 'No' });
-                        }
-                    } else if (questionText.includes('preferred method of communication')) {
-                        const button = div.querySelector('button');
-                        if (button) {
-                            buttons.push({ button, value: 'Email' });
-                        }
+        const questionDivs = Array.from(questionnaireSection.children).flatMap(child => Array.from(child.children));
+        const buttons = [];
+
+        questionDivs.forEach(div => {
+            const questionText = div.querySelector('p')?.textContent?.toLowerCase();
+            if (questionText) {
+                // Find matching question pattern
+                const matchingQuestion = eligibilityQuestionData.find(q => {
+                    // Check if all question texts are present in the question
+                    return q.questionTexts.every(text => questionText.includes(text.toLowerCase()));
+                });
+
+                if (matchingQuestion) {
+                    const button = div.querySelector('button');
+                    if (button) {
+                        buttons.push({ button, value: matchingQuestion.answer });
                     }
                 }
-            });
+            }
+        });
 
-            fillButtonDropdownsSequentially(buttons);
-        }
+        fillButtonDropdownsSequentially(buttons);
     }
 
     function fillIdentityPage1(identity) {
@@ -496,6 +474,8 @@
                 (section, data) => handleIterativeSection(section, data, fillEducationSection)),
             new Target('[aria-labelledby="Websites-section"]', PROFILE.links, 
                 (section, data) => handleIterativeSection(section, data, fillWebsiteSectionItem)),
+            new Target('[aria-labelledby="primaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySectionItem),
+            new Target('[aria-labelledby="secondaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySectionItem),
         ];
     }
 
@@ -518,10 +498,6 @@
             // temporarily disabled; todo: make it so it triggers right before submitting
         }
 
-        // Eligibility
-        answerEligibilityQuestions('primaryQuestionnaire-section');
-        answerEligibilityQuestions('secondaryQuestionnaire-section');
-
         // Identity
         fillIdentityPage1(PROFILE.identity);
         fillIdentityPage2();
@@ -534,6 +510,34 @@
         if (termsCheckbox) {
             fillCheckbox(termsCheckbox, true);
         }
+    }
+
+    function createButton(text, backgroundColor, hoverBackgroundColor, clickHandler) {
+        const button = document.createElement('button');
+        const style = {
+            padding: '10px 20px',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            backgroundColor: backgroundColor,
+        };
+
+        button.textContent = text;
+        Object.assign(button.style, style);
+
+        button.addEventListener('mouseover', () => {
+            button.style.backgroundColor = hoverBackgroundColor;
+        });
+        button.addEventListener('mouseout', () => {
+            button.style.backgroundColor = backgroundColor;
+        });
+        button.addEventListener('click', clickHandler);
+
+        return button;
     }
 
     window.addEventListener('load', function() {
@@ -549,74 +553,31 @@
         container.style.zIndex = '9999';
 
         // QuickApply button
-        const applyButton = document.createElement('button');
-        applyButton.textContent = 'QuickApply';
-        applyButton.style.padding = '10px 20px';
-        applyButton.style.backgroundColor = '#4CAF50';
-        applyButton.style.color = 'white';
-        applyButton.style.border = 'none';
-        applyButton.style.borderRadius = '5px';
-        applyButton.style.cursor = 'pointer';
-        applyButton.style.fontSize = '14px';
-        applyButton.style.fontWeight = 'bold';
-        applyButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        
-        applyButton.addEventListener('mouseover', () => {
-            applyButton.style.backgroundColor = '#45a049';
-        });
-        applyButton.addEventListener('mouseout', () => {
-            applyButton.style.backgroundColor = '#4CAF50';
-        });
-        
-        applyButton.addEventListener('click', fillForm);
+        const applyButton = createButton(
+            'QuickApply',
+            '#4CAF50',
+            '#45a049',
+            fillForm
+        );
 
         // Load Profile button
-        const loadButton = document.createElement('button');
-        loadButton.textContent = 'Load Profile';
-        loadButton.style.padding = '10px 20px';
-        loadButton.style.backgroundColor = '#2196F3';
-        loadButton.style.color = 'white';
-        loadButton.style.border = 'none';
-        loadButton.style.borderRadius = '5px';
-        loadButton.style.cursor = 'pointer';
-        loadButton.style.fontSize = '14px';
-        loadButton.style.fontWeight = 'bold';
-        loadButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        
-        loadButton.addEventListener('mouseover', () => {
-            loadButton.style.backgroundColor = '#1976D2';
-        });
-        loadButton.addEventListener('mouseout', () => {
-            loadButton.style.backgroundColor = '#2196F3';
-        });
-        
-        loadButton.addEventListener('click', loadProfileFromFile);
+        const loadButton = createButton(
+            'Load Profile',
+            '#2196F3',
+            '#1976D2',
+            loadProfileFromFile
+        );
 
         // Upload Resume button
-        const uploadResumeButton = document.createElement('button');
-        uploadResumeButton.textContent = 'Upload Resume';
-        uploadResumeButton.style.padding = '10px 20px';
-        uploadResumeButton.style.backgroundColor = '#FF9800';
-        uploadResumeButton.style.color = 'white';
-        uploadResumeButton.style.border = 'none';
-        uploadResumeButton.style.borderRadius = '5px';
-        uploadResumeButton.style.cursor = 'pointer';
-        uploadResumeButton.style.fontSize = '14px';
-        uploadResumeButton.style.fontWeight = 'bold';
-        uploadResumeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        uploadResumeButton.id = 'uploadResumeButton';
+        const uploadResumeButton = createButton(
+            'Upload Resume',
+            '#FF9800',
+            '#FB8C00',
+            uploadResume
+        );
 
-        uploadResumeButton.addEventListener('mouseover', () => {
-            uploadResumeButton.style.backgroundColor = '#FB8C00';
-        });
-        uploadResumeButton.addEventListener('mouseout', () => {
-            uploadResumeButton.style.backgroundColor = '#FF9800';
-        });
-
-        uploadResumeButton.addEventListener('click', uploadResume);
-
-        container.appendChild(loadButton);
         container.appendChild(applyButton);
+        container.appendChild(loadButton);
         container.appendChild(uploadResumeButton);
         document.body.appendChild(container);
     });
