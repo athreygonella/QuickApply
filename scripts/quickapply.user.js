@@ -242,43 +242,22 @@
     }
 
     function fillWorkExperience(experiencePanel, jobData) {
-        const jobTitleInput = experiencePanel.querySelector('input[name="jobTitle"]');
-        if (jobTitleInput) {
-            fillTextfield(jobTitleInput, jobData.jobTitle);
-        }
-
-        const companyInput = experiencePanel.querySelector('input[name="companyName"]');
-        if (companyInput) {
-            fillTextfield(companyInput, jobData.company);
-        }
-
-        const locationInput = experiencePanel.querySelector('input[name="location"]');
-        if (locationInput) {
-            fillTextfield(locationInput, jobData.location);
-        }
-
-        const currentlyWorkHereCheckbox = experiencePanel.querySelector('input[type="checkbox"][name="currentlyWorkHere"]');
-        fillCheckbox(currentlyWorkHereCheckbox, Boolean(jobData.currentlyWorkingHere));
-
-        const startDateDiv = experiencePanel.querySelector('div[data-automation-id="formField-startDate"]');
-        const startDate = new Date(jobData.from.year, jobData.from.month - 1); // Month is zero-based
-        fillCalendarInput(startDateDiv, startDate);
+        const targets = [
+            new Target(experiencePanel, 'input[name="jobTitle"]', jobData.jobTitle, fillTextfield),
+            new Target(experiencePanel, 'input[name="companyName"]', jobData.company, fillTextfield),
+            new Target(experiencePanel, 'input[name="location"]', jobData.location, fillTextfield),
+            new Target(experiencePanel, 'input[type="checkbox"][name="currentlyWorkHere"]', Boolean(jobData.currentlyWorkingHere), fillCheckbox),
+            new Target(experiencePanel, 'div[data-automation-id="formField-startDate"]', new Date(jobData.from.year, jobData.from.month - 1), fillCalendarInput),
+            new Target(experiencePanel, 'div[data-automation-id="formField-roleDescription"] textarea', jobData.roleDescription.join('\n'), fillTextarea),
+        ];
 
         if (!Boolean(jobData.currentlyWorkingHere)) {
-            const endDateDiv = experiencePanel.querySelector('div[data-automation-id="formField-endDate"]');
-            const endDate = new Date(jobData.to.year, jobData.to.month - 1); // Month is zero-based
-            fillCalendarInput(endDateDiv, endDate);
+            targets.push(new Target(experiencePanel, 'div[data-automation-id="formField-endDate"]', new Date(jobData.to.year, jobData.to.month - 1), fillCalendarInput));
         }
 
-        // Fill role description textarea
-        const roleDescriptionDiv = experiencePanel.querySelector('div[data-automation-id="formField-roleDescription"]');
-        if (roleDescriptionDiv) {
-            const textarea = roleDescriptionDiv.querySelector('textarea');
-            let roleDesc = jobData.roleDescription;
-            if (Array.isArray(roleDesc)) {
-                roleDesc = roleDesc.join('\n');
-            }
-            fillTextarea(textarea, roleDesc);
+        // Fill all targets
+        for (const target of targets) {
+            target.fill();
         }
     }
 
@@ -304,40 +283,25 @@
     }
 
     function fillEducationSection(educationPanel, eduData) {
-        const schoolInput = educationPanel.querySelector('input[name="schoolName"]');
-        if (schoolInput) {
-            fillTextfield(schoolInput, eduData.university);
-        }
+        const targets = [
+            new Target(educationPanel, 'input[name="schoolName"]', eduData.university, fillTextfield),
+            new Target(educationPanel, 'button[name="degree"]', eduData.degree, fillButtonDropdown),
+            new Target(educationPanel, 'div[data-automation-id="formField-fieldOfStudy"] input[data-uxi-widget-type="selectinput"]', eduData.major, fillListDropdown),
+            new Target(educationPanel, 'input[name="gradeAverage"]', eduData.gpa, fillTextfield),
+            new Target(educationPanel, 'div[data-automation-id="formField-firstYearAttended"]', eduData.from, fillYearInput),
+            new Target(educationPanel, 'div[data-automation-id="formField-lastYearAttended"]', eduData.to, fillYearInput),
+        ];
 
-        const degreeInput = educationPanel.querySelector('button[name="degree"]');
-        if (degreeInput && eduData.degree) {
-            fillButtonDropdown(degreeInput, eduData.degree);
+        // Fill all targets
+        for (const target of targets) {
+            target.fill();
         }
-        
-        const fieldOfStudyContainer = educationPanel.querySelector('div[data-automation-id="formField-fieldOfStudy"]');
-        if (fieldOfStudyContainer) {
-            const fieldOfStudyInput = fieldOfStudyContainer.querySelector('input[data-uxi-widget-type="selectinput"]');
-            fillListDropdown(fieldOfStudyInput, eduData.major);
-        }
-
-        const gpaInput = educationPanel.querySelector('input[name="gradeAverage"]');
-        if (gpaInput) {
-            fillTextfield(gpaInput, eduData.gpa);
-        }
-
-        const startYearDiv = educationPanel.querySelector('div[data-automation-id="formField-firstYearAttended"]');
-        fillYearInput(startYearDiv, eduData.from);
-        const finalYearDiv = educationPanel.querySelector('div[data-automation-id="formField-lastYearAttended"]');
-        fillYearInput(finalYearDiv, eduData.to);
     }
 
     function fillWebsiteSection(websitePanel, websiteData) {
-        const url = Object.values(websiteData)[0]; // Extract the value of the first field
-        
-        const urlInput = websitePanel.querySelector('input[name="url"]');
-        if (urlInput) {
-            fillTextfield(urlInput, url);
-        }
+        const url = Object.values(websiteData)[0];
+        const urlTarget = new Target(websitePanel, 'input[name="url"]', url, fillTextfield);
+        urlTarget.fill();
     }
 
     function uploadResume() {
@@ -441,46 +405,21 @@
     
 
     class Target {
-        constructor(selector, value, handler) {
+        constructor(parentContext, selector, value, handler) {
+            this.parentContext = parentContext;
             this.selector = selector;
             this.value = value;
             this.handler = handler;
         }
 
         async fill() {
-            if (!this.selector || !this.value || !this.handler) return;
+            if (!this.parentContext || !this.selector || !this.value || !this.handler) return;
 
-            const element = document.querySelector(this.selector);
+            const element = this.parentContext.querySelector(this.selector);
             if (!element) return;
 
             return await this.handler(element, this.value);
         }
-    }
-
-    function createTargets() {
-        return [
-            new Target('#name--legalName--firstName', PROFILE.personalInfo.firstName, fillTextfield),
-            new Target('#name--legalName--lastName', PROFILE.personalInfo.lastName, fillTextfield),
-            new Target('#address--addressLine1', PROFILE.personalInfo.address, fillTextfield),
-            new Target('#address--city', PROFILE.personalInfo.city, fillTextfield),
-            new Target('#address--countryRegion', PROFILE.personalInfo.state, fillButtonDropdown),
-            new Target('#address--postalCode', PROFILE.personalInfo.zipCode, fillTextfield),
-            new Target('[data-automation-id="formField-candidateIsPreviousWorker"]', PROFILE.workExperience, fillEmployedBeforeQuestion),
-            new Target('#phoneNumber--phoneNumber', PROFILE.personalInfo.phone, fillTextfield),
-            new Target('#source--source', 'Company Website', fillButtonDropdown),
-            new Target('#phoneNumber--phoneType', 'Mobile', fillButtonDropdown),
-            new Target('[aria-labelledby="Work-Experience-section"]', PROFILE.workExperience, 
-                (section, data) => handleIterativeSection(section, data, fillWorkExperience)),
-            new Target('[aria-labelledby="Education-section"]', PROFILE.education, 
-                (section, data) => handleIterativeSection(section, data, fillEducationSection)),
-            new Target('[aria-labelledby="Websites-section"]', PROFILE.links, 
-                (section, data) => handleIterativeSection(section, data, fillWebsiteSection)),
-            new Target('[aria-labelledby="primaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySection),
-            new Target('[aria-labelledby="secondaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySection),
-            new Target('[aria-labelledby="Personal-Data-Statement-section"]', PROFILE.identity, fillPersonalIdentity),
-            new Target('[aria-labelledby="selfIdentifiedDisabilityData-section"]', PROFILE, fillDisabilitySection),
-            new Target('#termsAndConditions--acceptTermsAndAgreements', true, fillCheckbox),
-        ];
     }
 
     // Main function to fill the form
@@ -490,7 +429,30 @@
             return;
         }
 
-        const targets = createTargets();
+        const targets = [
+            new Target(document, '#name--legalName--firstName', PROFILE.personalInfo.firstName, fillTextfield),
+            new Target(document, '#name--legalName--lastName', PROFILE.personalInfo.lastName, fillTextfield),
+            new Target(document, '#address--addressLine1', PROFILE.personalInfo.address, fillTextfield),
+            new Target(document, '#address--city', PROFILE.personalInfo.city, fillTextfield),
+            new Target(document, '#address--countryRegion', PROFILE.personalInfo.state, fillButtonDropdown),
+            new Target(document, '#address--postalCode', PROFILE.personalInfo.zipCode, fillTextfield),
+            new Target(document, '[data-automation-id="formField-candidateIsPreviousWorker"]', PROFILE.workExperience, fillEmployedBeforeQuestion),
+            new Target(document, '#phoneNumber--phoneNumber', PROFILE.personalInfo.phone, fillTextfield),
+            new Target(document, '#source--source', 'Company Website', fillButtonDropdown),
+            new Target(document, '#phoneNumber--phoneType', 'Mobile', fillButtonDropdown),
+            new Target(document, '[aria-labelledby="Work-Experience-section"]', PROFILE.workExperience, 
+                (section, data) => handleIterativeSection(section, data, fillWorkExperience)),
+            new Target(document, '[aria-labelledby="Education-section"]', PROFILE.education, 
+                (section, data) => handleIterativeSection(section, data, fillEducationSection)),
+            new Target(document, '[aria-labelledby="Websites-section"]', PROFILE.links, 
+                (section, data) => handleIterativeSection(section, data, fillWebsiteSection)),
+            new Target(document, '[aria-labelledby="primaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySection),
+            new Target(document, '[aria-labelledby="secondaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySection),
+            new Target(document, '[aria-labelledby="Personal-Data-Statement-section"]', PROFILE.identity, fillPersonalIdentity),
+            new Target(document, '[aria-labelledby="selfIdentifiedDisabilityData-section"]', PROFILE, fillDisabilitySection),
+            new Target(document, '#termsAndConditions--acceptTermsAndAgreements', true, fillCheckbox),
+        ];
+
         for (const target of targets) {
             await target.fill();
         }
