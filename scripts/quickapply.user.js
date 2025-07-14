@@ -40,22 +40,26 @@
         fileInput.click();
     }
 
-    function haveBeenEmployed() {
-        const fieldset = document.querySelector('[data-automation-id="formField-candidateIsPreviousWorker"] fieldset');
+    function fillEmployedBeforeQuestion(employedBeforeQuestion, workExperience) {
+        if (!employedBeforeQuestion) return;
+
+        const fieldset = employedBeforeQuestion.querySelector('fieldset');
         if (!fieldset) return false;
 
         const prevEmploymentQuestion = fieldset.querySelector('label span')?.textContent;
         if (!prevEmploymentQuestion) return false;
 
         const match = prevEmploymentQuestion.match(/(?:employed by|worked for)\s+([^?(]+)/i);
-        if (!match || !PROFILE?.workExperience) return false;
+        if (!match || !workExperience) return false;
 
         const companyNameInQuestion = match[1].trim();
 
-        return PROFILE.workExperience.some(job => {
+        const employedBefore = workExperience.some(job => {
             const companyName = job.company.toLowerCase();
             return companyNameInQuestion.toLowerCase().includes(companyName);
         });
+
+        fillRadioButtons('candidateIsPreviousWorker', String(employedBefore));
     }
 
     function fillTextfield(element, value) {
@@ -327,7 +331,7 @@
         fillYearInput(finalYearDiv, eduData.to);
     }
 
-    function fillWebsiteSectionItem(websitePanel, websiteData) {
+    function fillWebsiteSection(websitePanel, websiteData) {
         const url = Object.values(websiteData)[0]; // Extract the value of the first field
         
         const urlInput = websitePanel.querySelector('input[name="url"]');
@@ -345,7 +349,7 @@
         }
     }
 
-    function fillEligibilitySectionItem(questionnaireSection, eligibilityQuestionData) {
+    function fillEligibilitySection(questionnaireSection, eligibilityQuestionData) {
         if (!questionnaireSection || !eligibilityQuestionData?.length) return;
 
         const questionDivs = Array.from(questionnaireSection.children).flatMap(child => Array.from(child.children));
@@ -372,12 +376,8 @@
         fillButtonDropdownsSequentially(buttons);
     }
 
-    function fillIdentityPage1(identity) {
-        if (!identity) return;
-
-        // 1st page
-        const personalDataSection = document.querySelector('[aria-labelledby="Personal-Data-Statement-section"]');
-        if (!personalDataSection) return;
+    function fillPersonalIdentity(personalDataSection, identityData) {
+        if (!personalDataSection || !identityData) return;
 
         const buttons = [];
 
@@ -385,7 +385,7 @@
         if (genderField) {
             const genderButton = genderField.querySelector('button');
             if (genderButton) {
-                buttons.push({ button: genderButton, value: identity.gender });
+                buttons.push({ button: genderButton, value: identityData.gender });
             }
         }
 
@@ -393,7 +393,7 @@
         if (ethnicityField) {
             const ethnicityButton = ethnicityField.querySelector('button');
             if (ethnicityButton) {
-                buttons.push({ button: ethnicityButton, value: identity.ethnicity });
+                buttons.push({ button: ethnicityButton, value: identityData.ethnicity });
             }
         }
 
@@ -401,31 +401,30 @@
         if (veteranStatusField) {
             const veteranStatusButton = veteranStatusField.querySelector('button');
             if (veteranStatusButton) {
-                buttons.push({ button: veteranStatusButton, value: identity.isVeteran });
+                buttons.push({ button: veteranStatusButton, value: identityData.isVeteran });
             }
         }
 
         fillButtonDropdownsSequentially(buttons);
     }
 
-    function fillIdentityPage2() {
-        const selfIdentifiedDisabilitySection = document.querySelector('[aria-labelledby="selfIdentifiedDisabilityData-section"]');
-        if (!selfIdentifiedDisabilitySection) return;
+    function fillDisabilitySection(disabilitySection, profileData) {
+        if (!disabilitySection || !profileData) return;
 
-        const nameField = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-name"]');
+        const nameField = disabilitySection.querySelector('div[data-automation-id="formField-name"]');
         if (nameField) {
             const nameInput = nameField.querySelector('input[type="text"]');
             if (nameInput) {
-                fillTextfield(nameInput, `${PROFILE.personalInfo.firstName} ${PROFILE.personalInfo.lastName}`);
+                fillTextfield(nameInput, `${profileData.personalInfo.firstName} ${profileData.personalInfo.lastName}`);
             } 
         }
 
-        const dateSignedOnDiv = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-dateSignedOn"]');
+        const dateSignedOnDiv = disabilitySection.querySelector('div[data-automation-id="formField-dateSignedOn"]');
         if (dateSignedOnDiv) {
             fillCalendarInput(dateSignedOnDiv, new Date());
         }
 
-        const disabilityStatusField = selfIdentifiedDisabilitySection.querySelector('div[data-automation-id="formField-disabilityStatus"]');
+        const disabilityStatusField = disabilitySection.querySelector('div[data-automation-id="formField-disabilityStatus"]');
         if (disabilityStatusField) {
             const rowDivs = disabilityStatusField.querySelectorAll('div[role="row"]');
             rowDivs.forEach(rowDiv => {
@@ -439,6 +438,7 @@
             });
         }
     }
+    
 
     class Target {
         constructor(selector, value, handler) {
@@ -465,6 +465,7 @@
             new Target('#address--city', PROFILE.personalInfo.city, fillTextfield),
             new Target('#address--countryRegion', PROFILE.personalInfo.state, fillButtonDropdown),
             new Target('#address--postalCode', PROFILE.personalInfo.zipCode, fillTextfield),
+            new Target('[data-automation-id="formField-candidateIsPreviousWorker"]', PROFILE.workExperience, fillEmployedBeforeQuestion),
             new Target('#phoneNumber--phoneNumber', PROFILE.personalInfo.phone, fillTextfield),
             new Target('#source--source', 'Company Website', fillButtonDropdown),
             new Target('#phoneNumber--phoneType', 'Mobile', fillButtonDropdown),
@@ -473,9 +474,12 @@
             new Target('[aria-labelledby="Education-section"]', PROFILE.education, 
                 (section, data) => handleIterativeSection(section, data, fillEducationSection)),
             new Target('[aria-labelledby="Websites-section"]', PROFILE.links, 
-                (section, data) => handleIterativeSection(section, data, fillWebsiteSectionItem)),
-            new Target('[aria-labelledby="primaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySectionItem),
-            new Target('[aria-labelledby="secondaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySectionItem),
+                (section, data) => handleIterativeSection(section, data, fillWebsiteSection)),
+            new Target('[aria-labelledby="primaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySection),
+            new Target('[aria-labelledby="secondaryQuestionnaire-section"]', PROFILE.eligibilityQuestions, fillEligibilitySection),
+            new Target('[aria-labelledby="Personal-Data-Statement-section"]', PROFILE.identity, fillPersonalIdentity),
+            new Target('[aria-labelledby="selfIdentifiedDisabilityData-section"]', PROFILE, fillDisabilitySection),
+            new Target('#termsAndConditions--acceptTermsAndAgreements', true, fillCheckbox),
         ];
     }
 
@@ -491,24 +495,10 @@
             await target.fill();
         }
 
-        // Resume
         const resumeButton = document.getElementById('resumeAttachments--attachments');
         if (resumeButton) {
             // alert('Please click the Upload Resume button to proceed.');
             // temporarily disabled; todo: make it so it triggers right before submitting
-        }
-
-        // Identity
-        fillIdentityPage1(PROFILE.identity);
-        fillIdentityPage2();
-
-        // Workday Default Questions
-        fillRadioButtons('candidateIsPreviousWorker', String(haveBeenEmployed()));
-
-        // Terms and Conditions
-        const termsCheckbox = document.getElementById('termsAndConditions--acceptTermsAndAgreements');
-        if (termsCheckbox) {
-            fillCheckbox(termsCheckbox, true);
         }
     }
 
@@ -576,8 +566,8 @@
             uploadResume
         );
 
-        container.appendChild(applyButton);
         container.appendChild(loadButton);
+        container.appendChild(applyButton);
         container.appendChild(uploadResumeButton);
         document.body.appendChild(container);
     });
