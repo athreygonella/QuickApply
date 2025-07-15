@@ -375,17 +375,14 @@
     function fillDisabilitySection(disabilitySection, profileData) {
         if (!disabilitySection || !profileData) return;
 
-        const nameField = disabilitySection.querySelector('div[data-automation-id="formField-name"]');
-        if (nameField) {
-            const nameInput = nameField.querySelector('input[type="text"]');
-            if (nameInput) {
-                fillTextfield(nameInput, `${profileData.personalInfo.firstName} ${profileData.personalInfo.lastName}`);
-            } 
-        }
+        const targets = [
+            new Target(disabilitySection, 'div[data-automation-id="formField-name"] input[type="text"]', `${profileData.personalInfo.firstName} ${profileData.personalInfo.lastName}`, fillTextfield),
+            new Target(disabilitySection, 'div[data-automation-id="formField-dateSignedOn"]', new Date(), fillCalendarInput),
+        ];
 
-        const dateSignedOnDiv = disabilitySection.querySelector('div[data-automation-id="formField-dateSignedOn"]');
-        if (dateSignedOnDiv) {
-            fillCalendarInput(dateSignedOnDiv, new Date());
+        // Fill all targets
+        for (const target of targets) {
+            target.fill();
         }
 
         const disabilityStatusField = disabilitySection.querySelector('div[data-automation-id="formField-disabilityStatus"]');
@@ -464,35 +461,35 @@
         }
     }
 
-    function createButton(text, backgroundColor, hoverBackgroundColor, clickHandler) {
-        const button = document.createElement('button');
-        const style = {
-            padding: '10px 20px',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            backgroundColor: backgroundColor,
-        };
-
-        button.textContent = text;
-        Object.assign(button.style, style);
-
-        button.addEventListener('mouseover', () => {
-            button.style.backgroundColor = hoverBackgroundColor;
-        });
-        button.addEventListener('mouseout', () => {
-            button.style.backgroundColor = backgroundColor;
-        });
-        button.addEventListener('click', clickHandler);
-
-        return button;
-    }
-
     window.addEventListener('load', function() {
+        function createButton(text, backgroundColor, hoverBackgroundColor, clickHandler) {
+            const button = document.createElement('button');
+            const style = {
+                padding: '10px 20px',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                backgroundColor: backgroundColor,
+            };
+
+            button.textContent = text;
+            Object.assign(button.style, style);
+
+            button.addEventListener('mouseover', () => {
+                button.style.backgroundColor = hoverBackgroundColor;
+            });
+            button.addEventListener('mouseout', () => {
+                button.style.backgroundColor = backgroundColor;
+            });
+            button.addEventListener('click', clickHandler);
+
+            return button;
+        }
+
         // Container for centering
         const container = document.createElement('div');
         container.style.position = 'fixed';
