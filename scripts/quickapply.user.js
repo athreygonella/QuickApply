@@ -308,8 +308,6 @@
         const resumeButton = document.getElementById('resumeAttachments--attachments');
         if (resumeButton) {
             resumeButton.click(); // Simulate a click to open the file picker dialog
-        } else {
-            console.error('Resume upload button not found');
         }
     }
 
@@ -454,11 +452,7 @@
             await target.fill();
         }
 
-        const resumeButton = document.getElementById('resumeAttachments--attachments');
-        if (resumeButton) {
-            // alert('Please click the Upload Resume button to proceed.');
-            // temporarily disabled; todo: make it so it triggers right before submitting
-        }
+        uploadResume();
     }
 
     window.addEventListener('load', function() {
@@ -517,17 +511,8 @@
             loadProfileFromFile
         );
 
-        // Upload Resume button
-        const uploadResumeButton = createButton(
-            'Upload Resume',
-            '#FF9800',
-            '#FB8C00',
-            uploadResume
-        );
-
         container.appendChild(loadButton);
         container.appendChild(applyButton);
-        container.appendChild(uploadResumeButton);
         document.body.appendChild(container);
     });
 })();
