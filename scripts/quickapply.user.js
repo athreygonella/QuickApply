@@ -101,38 +101,42 @@
         return chain;
     }
 
-    function fillListDropdown(inputElement, value) {
+    async function fillListDropdown(inputElement, value) {
         if (!value || !inputElement) return;
         inputElement.click();
-        setTimeout(() => {
-            const majorContainer = document.querySelector('div[data-automation-id="activeListContainer"]');
-            if (!majorContainer) return;
-            let lastScrollTop = -1;
-            let attempts = 0;
-            const maxAttempts = 50;
 
-            function trySelect() {
-                const options = Array.from(majorContainer.querySelectorAll('div[aria-label]'));
-                const option = options.find(div => div.getAttribute('aria-label').toLowerCase().includes(value.toLowerCase()));
-                if (option) {
-                    // Try to find and click the input (radio button) inside the div
-                    const radio = option.querySelector('input[type="radio"]');
-                    if (radio) {
-                        radio.click();
+        await new Promise((resolve) => {
+            setTimeout(() => {
+                const majorContainer = document.querySelector('div[data-automation-id="activeListContainer"]');
+                if (!majorContainer) return resolve();
+                let lastScrollTop = -1;
+                let attempts = 0;
+                const maxAttempts = 50;
+
+                function trySelect() {
+                    const options = Array.from(majorContainer.querySelectorAll('div[aria-label]'));
+                    const option = options.find(div => div.getAttribute('aria-label').toLowerCase().includes(value.toLowerCase()));
+                    if (option) {
+                        // Try to find and click the input (radio button) inside the div
+                        const radio = option.querySelector('input[type="radio"]');
+                        if (radio) {
+                            radio.click();
+                        }
+                        return resolve();
                     }
-                    return;
+                    // If not found, scroll down and try again
+                    if (majorContainer.scrollTop !== lastScrollTop && attempts < maxAttempts) {
+                        lastScrollTop = majorContainer.scrollTop;
+                        majorContainer.scrollTop += 500; // Scroll down (empirically determined value)
+                        attempts++;
+                        setTimeout(trySelect, 400);
+                    } else {
+                        resolve(); // Resolve if max attempts are reached or no more scrolling is possible
+                    }
                 }
-                // If not found, scroll down and try again
-                if (majorContainer.scrollTop !== lastScrollTop && attempts < maxAttempts) {
-                    lastScrollTop = majorContainer.scrollTop;
-                    majorContainer.scrollTop += 500; // Scroll down (empirically determined value)
-                    attempts++;
-                    setTimeout(trySelect, 400);
-                }
-            }
-            trySelect();
-            document.body.click();
-        }, 2000);
+                trySelect();
+            }, 2000);
+        });
     }
 
     function fillRadioButtons(name, value) {
@@ -261,7 +265,7 @@
         }
     }
 
-    function fillYearInput(yearDiv, year) {
+    async function fillYearInput(yearDiv, year) {
         if (!yearDiv || !year) return;
 
         const yearInput = yearDiv.querySelector('input[data-automation-id="dateSectionYear-input"]');
@@ -280,6 +284,9 @@
         if (yearDisplayDiv) {
             yearDisplayDiv.textContent = year;
         }
+
+        // Wait for DOM to update
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     function fillEducationSection(educationPanel, eduData) {
@@ -324,7 +331,7 @@
         }
     }
 
-    function fillEligibilitySection(questionnaireSection, eligibilityQuestionData) {
+    async function fillEligibilitySection(questionnaireSection, eligibilityQuestionData) {
         if (!questionnaireSection || !eligibilityQuestionData?.length) return;
 
         const questionDivs = Array.from(questionnaireSection.children).flatMap(child => Array.from(child.children));
@@ -348,10 +355,10 @@
             }
         });
 
-        fillButtonDropdownsSequentially(buttons);
+        await fillButtonDropdownsSequentially(buttons);
     }
 
-    function fillPersonalIdentity(personalDataSection, identityData) {
+    async function fillPersonalIdentity(personalDataSection, identityData) {
         if (!personalDataSection || !identityData) return;
 
         const buttons = [];
@@ -380,7 +387,7 @@
             }
         }
 
-        fillButtonDropdownsSequentially(buttons);
+        await fillButtonDropdownsSequentially(buttons);
     }
 
     function fillDisabilitySection(disabilitySection, profileData) {
@@ -430,13 +437,7 @@
         }
     }
 
-    // Main function to fill the form
-    async function fillForm() { 
-        if (!PROFILE) {
-            alert('Please load your profile.json file first using the "Load Profile" button');
-            return;
-        }
-
+    async function fillCurrentPage() {
         const targets = [
             new Target(document, '#name--legalName--firstName', PROFILE.personalInfo.firstName, fillTextfield),
             new Target(document, '#name--legalName--lastName', PROFILE.personalInfo.lastName, fillTextfield),
@@ -466,6 +467,40 @@
         }
 
         await uploadResume();
+    }
+
+    async function fillApplication() { 
+        if (!PROFILE) {
+            alert('Please load your profile.json file first using the "Load Profile" button');
+            return;
+        }
+
+        let continueProcessing = true;
+        
+        while (continueProcessing) {
+            await fillCurrentPage();
+            
+            const nextPageButton = document.querySelector('[data-automation-id="pageFooterNextButton"]');
+            if (nextPageButton) {
+                const buttonText = nextPageButton.textContent.trim().toLowerCase();
+                
+                if (buttonText === 'submit') {
+                    continueProcessing = false;
+                    alert('Form filling complete! Please review the information and click Submit when ready.');
+                } else {
+                    nextPageButton.click();
+
+                    // Wait 3 seconds for the next page to load
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 3000);
+                    });
+                }
+            } else {
+                continueProcessing = false;
+            }
+        }
     }
 
     window.addEventListener('load', function() {
@@ -513,7 +548,7 @@
             'QuickApply',
             '#4CAF50',
             '#45a049',
-            fillForm
+            fillApplication
         );
 
         // Load Profile button
