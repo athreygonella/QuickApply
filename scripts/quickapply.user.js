@@ -219,7 +219,7 @@
         textarea.blur();
     }
 
-    function handleIterativeSection(sectionElement, data, itemHandler) {
+    async function handleIterativeSection(sectionElement, data, itemHandler) {
         if (!sectionElement || !data?.length) return;
 
         for (let i = 1; i <= data.length; i++) {
@@ -236,16 +236,20 @@
             }
 
             // Wait for panel to appear and fill it
-            setTimeout(() => {
-                itemPanel = sectionElement.querySelector(`[aria-labelledby="${sectionName}-${i}-panel"]`);
-                if (itemPanel) {
-                    itemHandler(itemPanel, itemData);
-                }
-            }, 1000);
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    itemPanel = sectionElement.querySelector(`[aria-labelledby="${sectionName}-${i}-panel"]`);
+                    resolve();
+                }, 1000);
+            });
+
+            if (itemPanel) {
+                await itemHandler(itemPanel, itemData);
+            }
         }
     }
 
-    function fillWorkExperience(experiencePanel, jobData) {
+    async function fillWorkExperience(experiencePanel, jobData) {
         const targets = [
             new Target(experiencePanel, 'input[name="jobTitle"]', jobData.jobTitle, fillTextfield),
             new Target(experiencePanel, 'input[name="companyName"]', jobData.company, fillTextfield),
@@ -259,9 +263,8 @@
             targets.push(new Target(experiencePanel, 'div[data-automation-id="formField-endDate"]', new Date(jobData.to.year, jobData.to.month - 1), fillCalendarInput));
         }
 
-        // Fill all targets
         for (const target of targets) {
-            target.fill();
+            await target.fill();
         }
     }
 
@@ -284,12 +287,9 @@
         if (yearDisplayDiv) {
             yearDisplayDiv.textContent = year;
         }
-
-        // Wait for DOM to update
-        await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    function fillEducationSection(educationPanel, eduData) {
+    async function fillEducationSection(educationPanel, eduData) {
         const targets = [
             new Target(educationPanel, 'input[name="schoolName"]', eduData.university, fillTextfield),
             new Target(educationPanel, 'button[name="degree"]', eduData.degree, fillButtonDropdown),
@@ -299,22 +299,21 @@
             new Target(educationPanel, 'div[data-automation-id="formField-lastYearAttended"]', eduData.to, fillYearInput),
         ];
 
-        // Fill all targets
         for (const target of targets) {
-            target.fill();
+            await target.fill();
         }
     }
 
-    function fillWebsiteSection(websitePanel, websiteData) {
+    async function fillWebsiteSection(websitePanel, websiteData) {
         const url = Object.values(websiteData)[0];
         const urlTarget = new Target(websitePanel, 'input[name="url"]', url, fillTextfield);
-        urlTarget.fill();
+        await urlTarget.fill();
     }
 
     async function uploadResume() {
         const resumeButton = document.getElementById('resumeAttachments--attachments');
         if (resumeButton) {
-            resumeButton.click(); // Open the file picker dialog
+            resumeButton.click(); // Open the file picker
 
             // Wait for resume upload to finish before returning control
             await new Promise((resolve) => {
@@ -438,6 +437,9 @@
     }
 
     async function fillCurrentPage() {
+        // Trigger the manual resume upload immediately to ensure it happens within the user activation context
+        await uploadResume();
+
         const targets = [
             new Target(document, '#name--legalName--firstName', PROFILE.personalInfo.firstName, fillTextfield),
             new Target(document, '#name--legalName--lastName', PROFILE.personalInfo.lastName, fillTextfield),
@@ -465,8 +467,6 @@
         for (const target of targets) {
             await target.fill();
         }
-
-        await uploadResume();
     }
 
     async function fillApplication() { 
