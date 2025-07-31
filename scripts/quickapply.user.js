@@ -478,8 +478,6 @@
         let continueProcessing = true;
         
         while (continueProcessing) {
-            await fillCurrentPage();
-            
             const nextPageButton = document.querySelector('[data-automation-id="pageFooterNextButton"]');
             if (nextPageButton) {
                 const buttonText = nextPageButton.textContent.trim().toLowerCase();
@@ -488,6 +486,8 @@
                     continueProcessing = false;
                     alert('Form filling complete! Please review the information and click Submit when ready.');
                 } else {
+                    await fillCurrentPage();
+                    
                     nextPageButton.click();
 
                     // Wait 3 seconds for the next page to load
