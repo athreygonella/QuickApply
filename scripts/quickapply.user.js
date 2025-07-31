@@ -304,10 +304,23 @@
         urlTarget.fill();
     }
 
-    function uploadResume() {
+    async function uploadResume() {
         const resumeButton = document.getElementById('resumeAttachments--attachments');
         if (resumeButton) {
-            resumeButton.click(); // Simulate a click to open the file picker dialog
+            resumeButton.click(); // Open the file picker dialog
+
+            // Wait for resume upload to finish before returning control
+            await new Promise((resolve) => {
+                const interval = 500; // Check every 500ms
+
+                const checkUploadStatus = setInterval(() => {
+                    const fileUploadDiv = document.querySelector('[data-automation-id="file-upload-item"]');
+                    if (fileUploadDiv) {
+                        clearInterval(checkUploadStatus);
+                        resolve();
+                    }
+                }, interval);
+            });
         }
     }
 
@@ -452,7 +465,7 @@
             await target.fill();
         }
 
-        uploadResume();
+        await uploadResume();
     }
 
     window.addEventListener('load', function() {
